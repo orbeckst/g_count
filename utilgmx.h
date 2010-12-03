@@ -34,7 +34,7 @@ extern real ***grid3_alloc(int nx, int ny, int nz);
 extern real **grid2_alloc(int nx, int ny);
 extern void msg     (const char *format, ...);
 extern void dmsg    (const char *format, ...);
-extern void dprintf (const char *format, ...);
+extern void dbgprintf (const char *format, ...);
 extern void dfprintf (const char *format, ...);
 extern void quicksort (atom_id v[], int left, int right);
 extern real ldist (const rvec x, const rvec p, const rvec c);

@@ -137,7 +137,7 @@ void dmsg (const char *format, ...)
 };
   
 
-void dprintf (const char *format, ...)
+void dbgprintf (const char *format, ...)
 {
   va_list args;
   va_start(args, format);
