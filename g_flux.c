@@ -1,7 +1,6 @@
 /*
  * $Id: g_flux.c,v 1.16 2009/07/22 15:31:14 oliver Exp $
  */
-static char *SRCID_g_flux_c = "$Id: g_flux.c,v 1.16 2009/07/22 15:31:14 oliver Exp $";
 
 #include <math.h>
 #include <string.h>
@@ -456,7 +455,6 @@ int main(int argc,char *argv[])
 #define NPA   asize(pa)
 
   CopyRight(stderr,argv[0]);
-  fprintf (stderr, "\nVersion: %s\n\n", SRCID_g_flux_c);
 
   parse_common_args(&argc,argv,PCA_CAN_TIME | PCA_CAN_VIEW,
 		    NFILE,fnm,asize(pa),pa,asize(desc),desc,asize(bugs),bugs);

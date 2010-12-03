@@ -5,8 +5,6 @@
  * see http://www.gromacs.org
  *
  */
-static char *SRCID_g_count_c = "$Id: g_count.c,v 1.37 2009/07/02 15:15:12 oliver Exp $";
-
 #include <math.h>
 #include <string.h>
 #include <stdarg.h>
@@ -65,7 +63,7 @@ void do_tracking (FILE *fTrack, FILE *fTDat, t_atmcav *trckd[],
   int ncav[etxNR];   /* number of molecules ever in the cavity */
   int ntrck[etxNR];  /* number of mol/atoms tracked (ie t > tau) */
 
-  atom_id *atndx;        /* indices from block.        */
+  atom_id *atndx = NULL;     /* indices from block.        */
   t_block *mols;             /* all molecules in system    */
   t_atom  *atoms;            /* all atoms */
 		       
@@ -457,7 +455,6 @@ int main(int argc,char *argv[])
 #define NPA   asize(pa)
 
   CopyRight(stderr,argv[0]);
-  fprintf (stderr, "\nVersion: %s\n\n", SRCID_g_count_c);
 
   parse_common_args(&argc,argv,PCA_CAN_TIME | PCA_CAN_VIEW,
 		    NFILE,fnm,asize(pa),pa,asize(desc),desc,asize(bugs),bugs);
@@ -592,11 +589,10 @@ int main(int argc,char *argv[])
   
   do {
     /* write time in ps */
-    sprintf (s_tmp, "%10g", t);
-    fprintf(out, s_tmp);
-    fprintf(fData, s_tmp);
-    fprintf(fConc, s_tmp);
-    fprintf(fDens, s_tmp);
+    fprintf(out, "%10g", t);
+    fprintf(fData, "%10g", t);
+    fprintf(fConc, "%10g", t);
+    fprintf(fDens, "%10g", t);
 
     nmol = 0;       /* restart counting at each timestep */
     totalmass = 0;  /* mass of all particles in the cavity */
