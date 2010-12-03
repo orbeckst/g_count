@@ -2,8 +2,11 @@
 # Note: Makefile is automatically generated from Makefile.in by the configure
 # script, and Makefile.in is generated from Makefile.am by automake.
 #
-# $Id: Makefile.am,v 1.1.1.1 2001/11/12 20:49:01 oliver Exp $
+# $Id: Makefile.am,v 1.2 2009/06/24 12:51:16 oliver Exp $
 # $Log: Makefile.am,v $
+# Revision 1.2  2009/06/24 12:51:16  oliver
+# cleanup: removed unusable files, added others were necessary, all untested
+#
 # Revision 1.1.1.1  2001/11/12 20:49:01  oliver
 # Transferring g_count into the Biop CVS repository -- this checkin only
 # creates the directory structure and adds README and stuff to
@@ -26,14 +29,13 @@ EXTRA_DIST              = README
 # issue "make <program>" and copy the binary to the correct location yourself! 
 # Add new entries in Makefile.am!
 
-bin_PROGRAMS         =   g_count g_zcoord 
-EXTRA_PROGRAMS       =   g_diff g_msd2
+bin_PROGRAMS         =   g_count g_flux g_zcoord 
 
 # Note: you don't have to list sources for "prog" if it is the single file prog.c
 
-g_count_SOURCES 	= g_count.c xmgr.c utilgmx.c
-g_zcoord_SOURCES        = g_zcoord.c xmgr.c
-g_msd2_SOURCES          = g_msd2.c  xmgr.c $(LSQ)
+g_count_SOURCES 	= g_count.c count.c xf.c utilgmx.c
+g_flux_SOURCES          = g_flux.c count.c xf.c utilgmx.c
+g_zcoord_SOURCES        = g_zcoord.c count.c xf.c utilgmx.c
 
 
 CLEANFILES   = 	*~ \\\#*

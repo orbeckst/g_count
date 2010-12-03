@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.39 2009/06/15 15:49:57 oliver Exp $
+# $Id: Makefile,v 1.41 2009/06/24 12:45:58 oliver Exp $
 #
 #
 # Makefile for the compilation of g_count and relatives
@@ -18,14 +18,15 @@ GMX_TOP_DIR        := $(HOME)/Library/Gromacs/version/4.0.2
 #GMX_TOP_DIR         := /sansom/fedpacks/opt/gromacs/4.0.4
 #
 # EXEC depends on your machine/OS
-#GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/$(shell config.guess)
-GMX_EXEC_PREFIX := $(GMX_TOP_DIR)#
+ARCH := $(shell ./config.guess)
+GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/$(ARCH)
+#GMX_EXEC_PREFIX := $(GMX_TOP_DIR)#
 GMX_LIB_DIR     := $(GMX_EXEC_PREFIX)/lib#
 GMX_INCLUDE_DIR := $(GMX_TOP_DIR)/include/gromacs#
 
 # install binaries to
-BIN_DIR := $(HOME)/bin
-#BIN_DIR := $(GMX_EXEC_PREFIX)/bin
+#BIN_DIR := $(HOME)/bin
+BIN_DIR := $(GMX_EXEC_PREFIX)/bin
 
 #
 #------------------------------------------------------------
@@ -49,16 +50,21 @@ endif
 #LD_LIBRARY_PATH += /usr/src/gm-1.6.3_Linux/binary/lib/
 # for libgm.so on synapse
 
-# '-lpthread ' may be required for icc
-LDFLAGS  +=  -lm -L$(GMX_LIB_DIR) -lmd -lgmx #-lpthread
+LDFLAGS  +=  -lm -L$(GMX_LIB_DIR) -lmd -lgmx
+
+ifeq ($(CC),icc)
+   # '-lpthread ' may be required for icc
+   LDFLAGS +=  -lpthread
+endif
+
+# hmph... seems to be required on Mac OS X, otherwise I get
+# "ld: could not find entry point "start" (perhaps missing crt1.o) for inferred architecture i386"
+LD := $(CC)
 
 ifdef WITH_MPI
   # on synapse.biop.ox.ac.uk, gmx linked with mpi stuff:
   MPI_D := /usr/local/mpich-gm_GNU
   CC := $(MPI_D)/bin/mpicc
-  LD := $(CC)
-else
-  CC := gcc
   LD := $(CC)
 endif
 
@@ -94,12 +100,12 @@ G_XX_SRC := g_xx.c
 G_XX_H   := $(AUX_H)
 G_XX_OBJ := g_xx.o 
 
-# removed: # $(G_ZCOORD) $(G_RI3DC) $(A_RI3DC)
-ALL_PROG := $(G_COUNT) $(G_FLUX)
+ALL_PROG := $(G_COUNT) $(G_FLUX) $(G_ZCOORD)
 
-# removed:                $(G_ZCOORD_SRC) $(G_ZCOORD_H)
+# removed:                
 ALL_SOURCES := $(G_COUNT_SRC) $(G_COUNT_H) \
                $(G_FLUX_SRC) $(G_FLUX_H) \
+               $(G_ZCOORD_SRC) $(G_ZCOORD_H) \
 	       $(AUX_SRC) $(AUX_H)
 
 define usage
@@ -126,6 +132,7 @@ define usage
 \n  DEBUG        compile with debugging, -g and no optimisations\
 \n  WITH_MPI     use mpi compiler instead of gcc\
 \n               (set CC and LD in the 'ifdef WITH_MPI' section)\
+\n  ARCH         architecture string [$(ARCH)]\
 \n\
 \nUse \`make doxygen' to generate documentation in\
 \n       /sansom/public_html/localinfo/dev/g_count
@@ -162,9 +169,9 @@ $(G_FLUX_OBJ): $(G_FLUX_SRC) $(G_FLUX_H)
 
 
 
-$(G_XX): $(G_XX_OBJ) $(AUX_OBJ) 
-	$(LD) -o $@ $^ $(LDFLAGS)
-$(G_XX_OBJ): $(G_XX_SRC) $(G_XX_H)
+# $(G_XX): $(G_XX_OBJ) $(AUX_OBJ) 
+# 	$(LD) -o $@ $^ $(LDFLAGS)
+# $(G_XX_OBJ): $(G_XX_SRC) $(G_XX_H)
 
 
 TAGS: $(ALL_SOURCES)
@@ -201,7 +208,7 @@ distclean: clean
 #                       minor are my releases
 NAME  := g_count
 MAJOR := gmx4
-MINOR := 2
+MINOR := 3
 
 TAR_NAME := $(NAME)-$(MAJOR).$(MINOR).tar.bz2
 TAR_DIR  := $(NAME)-$(MAJOR).$(MINOR)
