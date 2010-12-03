@@ -1,7 +1,7 @@
 /*
- * $Id: g_flux.c,v 1.11 2009/01/19 16:19:45 oliver Exp $
+ * $Id: g_flux.c,v 1.13 2009/06/15 15:49:57 oliver Exp $
  */
-static char *SRCID_g_flux_c = "$Id: g_flux.c,v 1.11 2009/01/19 16:19:45 oliver Exp $";
+static char *SRCID_g_flux_c = "$Id: g_flux.c,v 1.13 2009/06/15 15:49:57 oliver Exp $";
 
 #include <math.h>
 #include <string.h>
@@ -24,7 +24,8 @@ static char *SRCID_g_flux_c = "$Id: g_flux.c,v 1.11 2009/01/19 16:19:45 oliver E
 #include "utilgmx.h"
 #include "count.h"
 
-/* algorithm for detecting pore crossings ('pX'): "Check on exit"
+/* 
+   algorithm for detecting pore crossings ('pX'): "Check on exit"
    For each molecule
    (1) * detect boundary crossing across z=z1 or z2 ('bX')
 
@@ -42,12 +43,14 @@ static char *SRCID_g_flux_c = "$Id: g_flux.c,v 1.11 2009/01/19 16:19:45 oliver E
                                                / +1  up
          u = sgn( Dot(x[t]-x[t-1], axis) ) = {
                                                \ -1  down
-   if bX occurred AND divergence == +1 
+   if bX occurred AND divergence == +1 AND molecule enters cylinder
       store (t, u) 
 
    (IMPORTANT: only trajectories O->I->O are counted as complete
    transitions through the pore; I->O->I are periodic boundary trajectories.
-   Thus, we only need to remember ENTER (influx) states of water molecules)
+   Thus, we only need to remember ENTER (influx) states of water
+   molecules; this means we only check ENTER events if they are going
+   into the cylinder)
 
    (2) detect pX
    if bX occurred AND divergence == -1 
@@ -144,7 +147,7 @@ int update_result (t_result *result) {
   /* update_result() may be called more than once but changes occur
      only at the very first call. This is not very robust---I
      cannot call update_result repeatedly because I will loose all
-     further changes that my occur during this time frame. There is
+     further changes that may occur during this time frame. There is
      nothing to do beyond simply splitting it in two routines: one for
      CPHI and the other for PHI. Or an additional flag to finalise?
   */
@@ -209,6 +212,10 @@ real pore_crossing (const rvec x, const rvec x_last, const real t,
   };
   */
 
+  /* Check if the particle should be counted: Do we currently keep
+     track of it or is it new but in the region of interest? 
+  */
+
   if (bCrossing(x, x_last, cavity)) {
     divergence = typeCrossing (x, cavity);
 
@@ -228,6 +235,13 @@ real pore_crossing (const rvec x, const rvec x_last, const real t,
 	       "   divergence = %d     u = %d    (axis=(%4f,%4f,%4f))\n",
 	       divergence, u, (*axis)[XX], (*axis)[YY], (*axis)[ZZ]); 
     };
+
+    if (divergence == 1 && ! bInCavity(x, cavity)) {
+      /* ENTERing the boundary but OUTSIDE the cylinder:
+	 Do not record the event and simply return with tau=0 ("no crossing")
+       */
+      return 0;
+    }
 
     if (divergence == 1 ) {
       /* store the ENTER event */
@@ -281,12 +295,10 @@ real pore_crossing (const rvec x, const rvec x_last, const real t,
 int main(int argc,char *argv[])
 {
   static char *desc[] = {
-    "[TT]g_flux[TT] calculates the flux of molecules (or atoms) through "
+    "[TT]g_flux[TT] calculates the flux of atoms through "
     "a  cylindrical region as a function of time. It takes an index file "
-    "with atomnumbers and chooses the molecules that these atoms belong to "
-    "(or optionally (with [TT]-nom[TT]) it simply takes all atoms in the "
-    "index) and generates an output file with the "
-    "number of molecules/atoms at each time frame.[PAR]",
+    "with atomnumbers and generates an output file with the "
+    "number of atoms at each time frame.[PAR]",
     "Output:\n"
     "=======-----------------------------------------------------------\n"
     " PHI+,  PHI-              flux parallel/anti-parallel to pore axis\n"
@@ -305,18 +317,14 @@ int main(int argc,char *argv[])
     "-cdat:\n"
     "   t C[PHI] C[PHI+] C[PHI-] |C[PHI]| <tau>(t)[PAR]",
     "Suggested use for water:\n",
-    "create an index file for the water molecules:\n",
-    "  [TT]echo -e \"keep 0\\ndel 0\\nr SOL\\nq\\n\" ",
-    "| make_ndx -f in.pdb -o sol.ndx[TT]\n",
-    "and run [TT]g_flux -m[TT] on it ([TT]-m[TT] is the default)."
+    "create an index file for the water oxygens:\n",
+    "  [TT]echo -e \"keep 0\\ndel 0\\nt OW\\nq\\n\" ",
+    "| make_ndx -f in.pdb -o ow.ndx[TT]\n",
+    "and run [TT]g_count[TT} on it."
   };
 
   static char *bugs[] = { 
     "g_flux is currently ALPHA development.",
-    "-m behaves different from the standard usage "
-    "within the g_* programs -- it figures out _for itself_ what the "
-    "molecules are and does not need MOLECULE numbers but ATOM_IDs.",
-    "-m is the DEFAULT behaviour!",
     "The DEFAULT volume/radius correction is specific for MY setup",
     "Despite appearance it only makes sense to specify a pore axis "
     "approximately parallel to the z-axis because we only really base "
@@ -324,8 +332,7 @@ int main(int argc,char *argv[])
     "XMGrace files have the wrong suffix (xvg instead of agr)",
   };
 
-  bool bMolecular = TRUE;   /* default is to use molecules    */
-  t_cavity   cavity = {   /* define volume to count mols in */
+  static t_cavity   cavity = {   /* define volume to count mols in */
     {0, 0, 1},            /* axis     */
     {0, 0, 0},            /* cpoint   */
     -1,                   /* radius   */
@@ -333,23 +340,23 @@ int main(int argc,char *argv[])
     -1,
     0                    /* volume - calculate later */
   };
-  real dR = DR_DEFAULT;   /* volume correction */
-
+  static real dR = DR_DEFAULT;   /* effective radius R* = R - dR [PERSONAL DEFAULT]*/
+  static int  ngroups = 1;  /* not used >1 */
   t_pargs pa[] = {
-    { "-m",      FALSE, etBOOL, {&bMolecular},
-      "index contains atoms, but g_flux counts the molecules"},
     { "-axis",   FALSE, etRVEC, {&(cavity.axis)},
       "Vector pointing parallel to the pore axis"},
     { "-cpoint", FALSE, etRVEC, {&(cavity.cpoint)},
-      "HIDDENPoint on the pore axis"},
+      "Point on the pore axis"},
     { "-R",      FALSE, etREAL, {&(cavity.radius)},
-      "HIDDENRadius of the cylindrical pore cavity"},
+      "Radius of the cylindrical pore cavity"},
     { "-z1",     FALSE, etREAL, {&(cavity.z1)},
       "Confine waters to have a z coordinate larger than z1, and"},
     { "-z2",     FALSE, etREAL, {&(cavity.z2)},
       "smaller than z2"},
     { "-dR",     FALSE, etREAL, {&dR},
-      "HIDDENCorrect water-accessible cavity volume" }
+      "HIDDENCorrect water-accessible cavity volume" },
+    { "-ng",       FALSE, etINT, {&ngroups},
+      "HIDDENNumber of groups to consider" },    
   };
 
   t_filenm fnm[] = {
@@ -368,7 +375,11 @@ int main(int argc,char *argv[])
   FILE       *fCData;        /* accumulated flux */
   FILE       *fncr;          /* index of crossing particles */
   FILE       *fres;          /* histogram of residency and crossing times */
-  t_topology *top;           /* topology                   */
+  t_topology  top;           /* topology                   */
+  int        ePBC;
+  char       title[STRLEN];
+  rvec       *xtop;
+  bool       bTop;
   rvec       *x,*x_s;        /* coord, with and without pbc*/
   rvec       *x_last;        /* coord of last frame with pbc for
                                 molecules (COM) or atoms */
@@ -380,18 +391,22 @@ int main(int argc,char *argv[])
   int        status;
   int        i;              /* loopcounters                 */
   int        tot_frames = 0; /* t_tot = tot_frames * delta_t */
-  char       *grpname;       /* name of the group            */
-  int        gnx;            /* number of atoms in group*/
-  int        gnmol;          /* number of molecules in group */
-  atom_id    *molndx;        /* index of mols in atndx */
-  atom_id    *index;         /* atom numbers in index file  */
-  t_block *mols;             /* all molecules in system    */
   t_crossing *influx;        /* array recording all enter events 
 				for mols/atoms */
   t_result   result;         /* flux for current t and total flux,
                                 particles that crossed the pore */
 
   char       s_tmp[STRLEN];  /* string for use with sprintf() */
+  /* from gmx_traj.c */
+  char       *indexfn;
+  char       **grpname;
+  int        *isize0,*isize;
+  atom_id    **index0,**index;
+  /* old 3.3.x and modified */
+  char       *ggrpname;      /* name of the FIRST group       */
+  int        gnx = 0;        /* number of atoms in FIRST group*/
+  atom_id    *gindex = NULL; /* index of FIRST group */
+  int        gnmol = 0;      /* XXX number of molecules in group */
 
 #define NFILE asize(fnm)
 #define NPA   asize(pa)
@@ -408,61 +423,41 @@ int main(int argc,char *argv[])
   
   /* open input files */
 
-  top=read_top(ftp2fn_null(efTPS,NFILE,fnm));
-  get_index(&(top->atoms),ftp2fn_null(efNDX,NFILE,fnm),
-	    1,&gnx,&index,&grpname);
-  
-  /* step size in ps from tpx file 
-  dt = dt_tpx (ftp2fn_null(efTPS,NFILE,fnm));
-  dmsg ("Read from the topology: stepsize delta_t = %3g ps\n", dt);
-  */
+  bTop = read_tps_conf(ftp2fn(efTPS,NFILE,fnm),title,&top,&ePBC,&xtop,NULL,box,TRUE);
+  sfree(xtop);
 
-  /* get info about topology etc */
-  mols=&(top->blocks[ebMOLS]);
+  if (!bTop) {
+    gmx_fatal(FARGS, "Need a run input file");
+  }
 
-  /* construct array molndx of mol indices in atndx if -m is set */
-  molndx = NULL;
-  gnmol = -1;
-  if (bMolecular) {
-    msg ("Interpreting indexfile entries as parts of molecules and "
-         "using \ntheir center of mass.\n");
-    snew (molndx, mols->nr);
-    if ( (gnmol = mols_from_index (index, gnx, mols, molndx, mols->nr)) < 0) {
-      gmx_fatal(FARGS, "Error: could not find  molecules.\n");
-    };
-    msg ("%-10s%10s%10s\n", "Group", "Molecules", "Atoms");      
-    msg ("%-10s%10d%10d\n", grpname,  gnmol, gnx);
-    msg ("%-10s%10d%10d\n", "System", mols->nr, top->atoms.nr);
-  };
-  
+  snew(grpname,ngroups);
+  snew(isize0,ngroups);
+  snew(index0,ngroups);
 
-  if (bMolecular) {
-    init_t_result(&result,gnmol);
-    snew (xmol_cm,gnmol);
-    snew (x_last, gnmol);
-    snew (influx, gnmol);
-    for (i=0; i<gnmol; i++) {
-      /*
-	influx[i].id  id of the molecule 
-	              ??? as seen in the input tpr/xtc file???
-	influx[i].t records the time when molecule id entered the pore.
-	influx[i].u == 0 is the sign for an uninitialised crossing!
-	(valid values for u: +1, -1) 
-      */
-      influx[i].id = molndx[i];
-      influx[i].t  = 0;
-      influx[i].u  = 0;
-    };
-  } else {
-    init_t_result(&result,gnx);
-    xmol_cm = NULL;
-    snew (x_last, gnx);
-    snew (influx, gnx);
-    for (i=0; i<gnx; i++) {
-      influx[i].id = index[i];
-      influx[i].t  = 0;
-      influx[i].u  = 0;
-    };
+  indexfn = ftp2fn_null(efNDX,NFILE,fnm);
+  get_index(&(top.atoms),indexfn,ngroups,isize0,index0,grpname);
+  /* only looking at atoms, not molecules */
+  isize = isize0;
+  index = index0;
+
+  if (ngroups != 1) {
+    gmx_fatal(FARGS, "Sorry, only a single group currently allowed.");
+  }
+
+  /* ngroups == 1 at moment */
+  gnx = isize[0];
+  gindex = index[0];
+  ggrpname = grpname[0];
+
+
+  init_t_result(&result,gnx);
+  xmol_cm = NULL;
+  snew (x_last, gnx);
+  snew (influx, gnx);
+  for (i=0; i<gnx; i++) {
+    influx[i].id = gindex[i];
+    influx[i].t  = 0;
+    influx[i].u  = 0;
   };
 
   natoms = read_first_x(&status,ftp2fn(efTRX,NFILE,fnm),&t,&x,box);
@@ -480,12 +475,11 @@ int main(int argc,char *argv[])
   sprintf (s_tmp, "R=%4g nm, z\\s1\\N=%4g nm, z\\s2\\N=%4g nm,"
 	   " V=%4g nm\\S3\\N, indexgroup %s",
 	     cavity.radius, cavity.z1, cavity.z2, cavity.vol,
-	     grpname);
+	     ggrpname);
   out = xmgropen (opt2fn("-o",NFILE,fnm),
 		 "Flux",
 		 s_tmp,
 		 "Time [ps]",
-		 bMolecular ? "number of molecules" : 
 		 "number of atoms");
   fData   = ffopen (opt2fn("-dat",  NFILE, fnm), "w");  
   fCData  = ffopen (opt2fn("-cdat", NFILE, fnm), "w");  
@@ -494,12 +488,8 @@ int main(int argc,char *argv[])
   /* start counting .... */
 
   /* fill x_last from the first frame  */
-  if (bMolecular) {
-    x2molxcm (top, molndx, gnmol, box, x, x_s, x_last);
-  } else {
-    for(i=0; i<gnx; i++) {
-      copy_rvec(x[index[i]], x_last[i]);
-    };
+  for(i=0; i<gnx; i++) {
+    copy_rvec(x[gindex[i]], x_last[i]);
   };
 
   /* ... and advance */
@@ -525,27 +515,12 @@ int main(int argc,char *argv[])
     result.time = t;
     init_t_flux(&(result.PHI));
 
-    if (bMolecular) {
-      /* prepare COM coordinates for molecules in xmol_cm */
-      x2molxcm (top, molndx, gnmol, box, x, x_s, xmol_cm);
-
-      for (i = 0; i < gnmol; i++) {
-	pore_crossing (xmol_cm[i], x_last[i], t, 
-		       &(influx[i]), &cavity, &result);
-	copy_rvec(xmol_cm[i], x_last[i]);
-      };
-      /* End loop over all molecules */
-    } else {
-      for(i=0; i<gnx; i++) {
-	pore_crossing (x[index[i]], x_last[i], t, 
-		       &(influx[i]), &cavity, &result);
-	copy_rvec(x[index[i]], x_last[i]);
-      }
-      /* End loop over all atoms */
-    } 
-    
+    for(i=0; i<gnx; i++) {
+      pore_crossing (x[gindex[i]], x_last[i], t, 
+		     &(influx[i]), &cavity, &result);
+      copy_rvec(x[gindex[i]], x_last[i]);
+    }
     update_result (&result);
-
     {
       static char s_PHI[STRLEN], s_CPHI[STRLEN];
       /* output format:
@@ -576,9 +551,9 @@ int main(int argc,char *argv[])
      (1)  sort and write index of all particles that crossed 
   */
   quicksort (result.crossed, 0, result.ncr-1);
-  sprintf(s_tmp, "%s_crossed", grpname);
-  fwrite_index(fncr, result.crossed, bMolecular ? etxMOL : etxATOM,
-	      result.ncr, top, s_tmp);
+  sprintf(s_tmp, "%s_crossed", ggrpname);
+  fwrite_index(fncr, result.crossed, etxATOM,
+	      result.ncr, &top, s_tmp);
 
   /* histogram of residency and crossing times */
   fres = ffopen (opt2fn("-res",  NFILE, fnm), "w");    

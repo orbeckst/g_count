@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.34 2009/01/19 16:19:45 oliver Exp $
+# $Id: Makefile,v 1.39 2009/06/15 15:49:57 oliver Exp $
 #
 #
 # Makefile for the compilation of g_count and relatives
@@ -14,23 +14,25 @@
 #------------------------------------------------------------
 # Make sure that the following variables are correct for your setup
 # 
-GMX_TOP_DIR        := $(HOME)/Biop/Library/Gromacs/code/3.3.3
+GMX_TOP_DIR        := $(HOME)/Library/Gromacs/version/4.0.2
+#GMX_TOP_DIR         := /sansom/fedpacks/opt/gromacs/4.0.4
 #
 # EXEC depends on your machine/OS
-#GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/i686-pc-linux-gnu#
+#GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/$(shell config.guess)
 GMX_EXEC_PREFIX := $(GMX_TOP_DIR)#
 GMX_LIB_DIR     := $(GMX_EXEC_PREFIX)/lib#
 GMX_INCLUDE_DIR := $(GMX_TOP_DIR)/include/gromacs#
 
 # install binaries to
 BIN_DIR := $(HOME)/bin
+#BIN_DIR := $(GMX_EXEC_PREFIX)/bin
 
 #
 #------------------------------------------------------------
 
 # this is only necessary for the creation of etags
 # (for compilation it is not important)
-GMX_SOURCE_DIR  := $(HOME)/Biop/Library/Gromacs/code/source/gromacs-3.3.3
+##GMX_SOURCE_DIR  := $(HOME)/Library/Gromacs/code/gromacs-4.0.2
 
 
 CPPFLAGS += -I$(GMX_INCLUDE_DIR)
@@ -47,7 +49,8 @@ endif
 #LD_LIBRARY_PATH += /usr/src/gm-1.6.3_Linux/binary/lib/
 # for libgm.so on synapse
 
-LDFLAGS  +=  -lm -L$(GMX_LIB_DIR) -lmd -lgmx 
+# '-lpthread ' may be required for icc
+LDFLAGS  +=  -lm -L$(GMX_LIB_DIR) -lmd -lgmx #-lpthread
 
 ifdef WITH_MPI
   # on synapse.biop.ox.ac.uk, gmx linked with mpi stuff:
@@ -91,10 +94,12 @@ G_XX_SRC := g_xx.c
 G_XX_H   := $(AUX_H)
 G_XX_OBJ := g_xx.o 
 
-ALL_PROG := $(G_COUNT) $(G_FLUX) $(G_ZCOORD) $(G_RI3DC) $(A_RI3DC)
+# removed: # $(G_ZCOORD) $(G_RI3DC) $(A_RI3DC)
+ALL_PROG := $(G_COUNT) $(G_FLUX)
+
+# removed:                $(G_ZCOORD_SRC) $(G_ZCOORD_H)
 ALL_SOURCES := $(G_COUNT_SRC) $(G_COUNT_H) \
                $(G_FLUX_SRC) $(G_FLUX_H) \
-               $(G_ZCOORD_SRC) $(G_ZCOORD_H) \
 	       $(AUX_SRC) $(AUX_H)
 
 define usage
@@ -192,9 +197,11 @@ distclean: clean
 	echo "*.xtc *.trr *.tpr *.edr *.ndx" >> $@
 	echo "*Test*" >> $@
 
+# new numbering scheme: major is Gromacs compatibility
+#                       minor are my releases
 NAME  := g_count
-MAJOR := 0
-MINOR := 3
+MAJOR := gmx4
+MINOR := 2
 
 TAR_NAME := $(NAME)-$(MAJOR).$(MINOR).tar.bz2
 TAR_DIR  := $(NAME)-$(MAJOR).$(MINOR)
@@ -204,4 +211,4 @@ $(TAR_NAME): $(ALL_SOURCES) Makefile README examples
 	rm -rf $(TAR_DIR)
 	mkdir $(TAR_DIR)
 	cp -r $^ biop_contrib $(TAR_DIR)
-	tar -jcvf $@ $(TAR_DIR) && rm -rf $(TAR_DIR)
+	tar --exclude=CVS --exclude=*~ -jcvf $@ $(TAR_DIR) && rm -rf $(TAR_DIR)

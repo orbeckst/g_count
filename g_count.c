@@ -1,11 +1,11 @@
 /*
- * $Id: g_count.c,v 1.35 2009/01/19 16:19:45 oliver Exp $
+ * $Id: g_count.c,v 1.36 2009/06/08 16:42:06 oliver Exp $
  *
  * This program is based on a Gromacs 2.0 g_* program 
  * see http://www.gromacs.org
  *
  */
-static char *SRCID_g_count_c = "$Id: g_count.c,v 1.35 2009/01/19 16:19:45 oliver Exp $";
+static char *SRCID_g_count_c = "$Id: g_count.c,v 1.36 2009/06/08 16:42:06 oliver Exp $";
 
 #include <math.h>
 #include <string.h>
@@ -65,7 +65,7 @@ void do_tracking (FILE *fTrack, FILE *fTDat, t_atmcav *trckd[],
   int ncav[etxNR];   /* number of molecules ever in the cavity */
   int ntrck[etxNR];  /* number of mol/atoms tracked (ie t > tau) */
 
-  atom_id *a, *atndx;        /* indices from block.        */
+  atom_id *atndx;        /* indices from block.        */
   t_block *mols;             /* all molecules in system    */
   t_atom  *atoms;            /* all atoms */
 		       
@@ -85,10 +85,14 @@ void do_tracking (FILE *fTrack, FILE *fTDat, t_atmcav *trckd[],
        ncav[etxATOM]);
   };    
 
-  /* needed for translation mols -> atom ids */
-  mols  = &(top->blocks[ebMOLS]);
-  a     = mols->a;
-  atndx = mols->index;
+  /* needed for translation mols -> atom ids 
+     BROKEN (need to find out how to do this Gromacs 4.x)
+   */
+  if (bMolecular) {
+    mols  = &(top->mols);
+    atndx = mols->index;
+    //a     = mols->a; /* XXX */
+  }
   /* translation atom_id -> resnr 
      top->atoms->atom[atom_id]->resnr
   */
@@ -96,7 +100,6 @@ void do_tracking (FILE *fTrack, FILE *fTDat, t_atmcav *trckd[],
 
   for (type = etxATOM; type < (bMolecular ? etxNR : etxMOL); type++) {
     /*    quicksort (trckd[type], 0, ncav[type]-1); */
-
     /* ids to new index file */
     fprintf (fTrack, "[ %s_tracked%s ]\n", grpname,
 	     type == etxMOL ? "_molecules" : "");  
@@ -112,12 +115,12 @@ void do_tracking (FILE *fTrack, FILE *fTDat, t_atmcav *trckd[],
  	  moleculesize = atndx[tr->id + 1] - atndx[tr->id];
 	  dfprintf ("tracking trckd[etxMOL][%d].id = %d, moleculesize = %d, "
 		"first atom_id in mol = %d\n", 
-		i, tr->id, moleculesize, a[atndx[tr->id]]);
+		    i, tr->id, moleculesize, atoms[atndx[tr->id]].atomnumber); /* XXX: a -> atoms ?? */
 	  for (j = 0; j < moleculesize; j++) {
 	    /* ... fetch all atoms of this molecule */
 	    ntrck[type]++;
 	    /* ADD +1 when WRITING (external) index file !!! */
-	    fprintf (fTrack, "%5u %s", a[atndx[tr->id]+j] + 1,  
+	    fprintf (fTrack, "%5u %s", atoms[atndx[tr->id]+j].atomnumber + 1,  /* XXX: a -> atoms ?? */
 		     (ntrck[type] % 15 == 0) ? "\n" : "");
 	  };
 	};
@@ -128,7 +131,7 @@ void do_tracking (FILE *fTrack, FILE *fTDat, t_atmcav *trckd[],
 	  atom_id igmx;
 
 	  tr = &(trckd[type][i]);
-	  igmx = (type == etxMOL ? a[atndx[tr->id]] : tr->id);
+	  igmx = (type == etxMOL ? atoms[atndx[tr->id]].atomnumber : tr->id);  /* XXX: a -> atoms ?? */
 
 	  if (bTracked ( tr, t->tot_frames, t->tau) ) {
 	    ntrck[type]++;
@@ -203,7 +206,7 @@ void dump_a_cav (FILE *fp, enum ndxtype type, t_atmcav *trckd,
   int i;
   bool bDebugOutput;
 
-  atom_id *a, *atndx;        /* indices from block.        */
+  atom_id *atndx;        /* indices from block.        */
   t_block *mols;             /* all molecules in system    */
   t_atom  *atoms;            /* all atoms */		 
 
@@ -213,8 +216,7 @@ void dump_a_cav (FILE *fp, enum ndxtype type, t_atmcav *trckd,
   };
 
   /* needed for translation mols -> atom ids */
-  mols  = &(top->blocks[ebMOLS]);
-  a     = mols->a;
+  mols  = &(top->mols);
   atndx = mols->index;
   /* translation atom_id -> resnr 
      top->atoms->atom[atom_id]->resnr
@@ -226,13 +228,13 @@ void dump_a_cav (FILE *fp, enum ndxtype type, t_atmcav *trckd,
     t_atmcav *tr;
     
     tr = &(trckd[i]);
-    igmx = (type == etxMOL ? a[atndx[tr->id]] : tr->id); 
+    igmx = (type == etxMOL ? atoms[atndx[tr->id]].atomnumber : tr->id); 
     
     if (!bDebugOutput) {
     fprintf (fp, "%6u %6u %6s %12.1f %13.6f\n",
 	     igmx + 1,
 	     atoms[igmx].resnr + 1,
-	     *(top->atoms.atomname[igmx]),
+	     *(top->atoms.atomname[igmx]),  /* XXX ????  atoms[igmx].atomsname ??*/
 	     tr->time * t->delta_t,
 	     tr->time / t->tot_frames);
     } else {
@@ -240,7 +242,7 @@ void dump_a_cav (FILE *fp, enum ndxtype type, t_atmcav *trckd,
 	     tr->id + 1,
 	     igmx + 1,
 	     atoms[igmx].resnr + 1,
-	     *(top->atoms.atomname[igmx]),
+	     *(top->atoms.atomname[igmx]),     /* XXX ????  atoms[igmx].atomsname ??*/
 	     tr->time * t->delta_t,
 	     tr->time / t->tot_frames,
 	     bTracked (tr, t->tot_frames, t->tau) ?  "#TRACKED#" : "");
@@ -335,17 +337,30 @@ int main(int argc,char *argv[])
     "z1 and z2 default to the full box."
     "[PAR]"
     "Suggested use for water:\n",
-    "create an index file for the water molecules:\n",
-    "  [TT]echo -e \"keep 0\\ndel 0\\nr SOL\\nq\\n\" ",
-    "| make_ndx -f in.pdb -o sol.ndx[TT]\n",
-    "and run [TT]g_count -m[TT] on it ([TT]-m[TT] is the default)."
-    "[PAR]Known problems and CAVEATs:\n"
-    "---------------------------",
+    "create an index file for the water oxygens:\n",
+    "  [TT]echo -e \"keep 0\\ndel 0\\nt OW\\nq\\n\" ",
+    "| make_ndx -f in.pdb -o ow.ndx[TT]\n",
+    "and run [TT]g_count -nom[TT] on it ([TT]-nom[TT] is the default)."
   };
 
-  bool bMolecular = TRUE;   /* default is to use molecules    */
-  real tau = TAU_DEFAULT;   /* t_cav > tau => mol tracked  */
-  t_cavity   cavity = {   /* define volume to count mols in */
+  static char *bugs[] = { 
+    "NOT WORKING: -m behaves differently from the standard usage "
+    "within the g_* programs -- it figures out _for itself_ what the "
+    "molecules are and does not need MOLECULE numbers but ATOM_IDs.",
+    "-nom is the DEFAULT behaviour, i.e. you should only supply water  oxygens for water. "
+    "However, this means that the mass-density is wrong because hydrogens are not taken into account "
+    "so you should either just use concentrations/number densities or correct the mass yourself.",
+    "When counting ions you MUST use -nom !",
+    "The density is calculated as (total mass in cavity)/((R-r_water)^2*pi*(z2-z1)) -- "
+    "so it makes only sense if this approximates the true cavity volume.",
+    "The DEFAULT volume/radius correction is specific for methane pseudo "
+    "atoms (ffgmx, ffG43a1) and SPC water.",
+    "The program is only tested with pore axis parallel to z-axis (0,0,1).",
+  };
+
+  static bool bMolecular = FALSE;   /* default is to use atoms    */
+  static real tau = TAU_DEFAULT;   /* t_cav > tau => mol tracked  */
+  static t_cavity   cavity = {   /* define volume to count mols in */
     {0, 0, 1},            /* axis     */
     {0, 0, 0},            /* cpoint   */
     -1,                   /* radius   */
@@ -353,11 +368,11 @@ int main(int argc,char *argv[])
     -1,
     0                    /* volume - calculate later */
   };
-  real dR = DR_DEFAULT;   /* effective radius R* = R - dR [PERSONAL DEFAULT]*/
-
+  static real dR = DR_DEFAULT;   /* effective radius R* = R - dR [PERSONAL DEFAULT]*/
+  static int  ngroups = 1;  /* not used >1 */
   t_pargs pa[] = {
     { "-m",      FALSE, etBOOL, {&bMolecular},
-      "index contains atoms, but g_count counts the molecules"},
+      "HIDDENindex contains atoms, but g_count counts the molecules (NOT WORKING?!?)"},
     { "-axis",   FALSE, etRVEC, {&(cavity.axis)},
       "Vector pointing parallel to the pore axis"},
     { "-cpoint", FALSE, etRVEC, {&(cavity.cpoint)},
@@ -372,7 +387,9 @@ int main(int argc,char *argv[])
       "Total time (ps) that a particle has to be in the cavity at "
       "least so that it is tracked"},
     { "-dR",     FALSE, etREAL, {&dR},
-      "Correct water-accessible cavity volume" }
+      "Correct water-accessible cavity volume" },
+    { "-ng",       FALSE, etINT, {&ngroups},
+      "HIDDENNumber of groups to consider" },    
   };
   FILE       *out;           /* xmgr file with raw numbers */
   FILE       *fData;         /* t n c rho     :generic nxy data file      */
@@ -382,7 +399,11 @@ int main(int argc,char *argv[])
   FILE       *fConc;         /* xmgr concentration */
   FILE       *fTrack;        /* index file of all molecules that were
                                 ever in the cavity */
-  t_topology *top;           /* topology                   */
+  t_topology top;            /* topology                   */
+  int        ePBC;
+  char       title[STRLEN];
+  rvec       *xtop;
+  bool       bTop;
   rvec       *x,*x_s;        /* coord, with and without pbc*/
   rvec       xcm;            /* center of mass of molecule */
   matrix     box;            /* box matrix (3x3)           */
@@ -394,14 +415,6 @@ int main(int argc,char *argv[])
   int        status;
   int        i,j;            /* loopcounters                 */
   int        tot_frames = 0; /* t_tot = tot_frames * delta_t */
-  char       *grpname;       /* name of the group            */
-  int        gnx;            /* number of atoms in group*/
-  int        gnmol;          /* number of molecules in group */
-  int        moleculesize;   /* size of molecule in numbers*/
-  atom_id    *molndx;        /* index of mols in atndx */
-  atom_id    *index;         /* atom numbers in index file  */
-  atom_id    *a, *atndx;     /* indices from block.        */
-  t_block *mols;             /* all molecules in system    */
   t_filenm fnm[] = {
     { efTRX, "-f", NULL, ffREAD },
     { efTPS, NULL, NULL, ffREAD },
@@ -421,19 +434,24 @@ int main(int argc,char *argv[])
 
   char       s_tmp[STRLEN];  /* string for use with sprintf() */
   char       s_title[STRLEN];/* and another one... */  
-
-  static char *bugs[] = { 
-    "-m behaves differently from the standard usage "
-    "within the g_* programs -- it figures out _for itself_ what the "
-    "molecules are and does not need MOLECULE numbers but ATOM_IDs.",
-    "-m is the DEFAULT behaviour!",
-    "When counting ions you MUST use -nom !",
-    "The density is calculated as (total mass in cavity)/((R-r_water)^2*pi*(z2-z1)) -- "
-    "so it makes only sense if this approximates the true cavity volume.",
-    "The DEFAULT volume/radius correction is specific for methane pseudo "
-    "atoms (ffgmx, ffG43a1) and SPC water.",
-    "The program is only tested with pore axis parallel to z-axis (0,0,1).",
-  };
+  /* from gmx_traj.c */
+  char       *indexfn;
+  char       **grpname;
+  int        *isize0,*isize;
+  atom_id    **index0,**index;
+  atom_id    *atndx = NULL;
+  t_block    *mols= NULL;
+  /* old 3.3.x and modified */
+  char       *ggrpname;      /* name of the FIRST group       */
+  int        gnx = 0;        /* number of atoms in FIRST group*/
+  atom_id    *gindex = NULL; /* index of FIRST group */
+  int        gnmol = 0;      /* XXX number of molecules in group */
+  int        moleculesize;   /* XXX size of molecule in numbers*/
+  atom_id    *molndx = NULL; /* XXX index of mols in atndx */
+  t_atom     *atoms;         /* XXX replaces 'a' ???? */
+  //atom_id    *index;         /* atom numbers in index file  */
+  //atom_id    *a, *atndx;     /* indices from block.        */
+  //t_block *mols;             /* all molecules in system    */
 
 #define NFILE asize(fnm)
 #define NPA   asize(pa)
@@ -450,35 +468,73 @@ int main(int argc,char *argv[])
   
   /* open input files */
 
-  top=read_top(ftp2fn_null(efTPS,NFILE,fnm));
-  get_index(&(top->atoms),ftp2fn_null(efNDX,NFILE,fnm),
-	    1,&gnx,&index,&grpname);
+  /* old:   top=read_top(ftp2fn_null(efTPS,NFILE,fnm)); */
+  bTop = read_tps_conf(ftp2fn(efTPS,NFILE,fnm),title,&top,&ePBC,&xtop,NULL,box,TRUE);
+  sfree(xtop);
+
+  if (!bTop) {
+    gmx_fatal(FARGS, "Need a run input file");
+  }
+
+  if (bMolecular) {
+    gmx_fatal(FARGS, "Sorry, -m option not working at the moment");
+    indexfn = ftp2fn(efNDX,NFILE,fnm);
+  }
+  else {
+    indexfn = ftp2fn_null(efNDX,NFILE,fnm);
+  }
+
+  if (ngroups != 1) {
+    gmx_fatal(FARGS, "Sorry, only a single group currently allowed.");
+  }
+
+  snew(grpname,ngroups);
+  snew(isize0,ngroups);
+  snew(index0,ngroups);
+
+  /* old:   get_index(&(top->atoms),ftp2fn_null(efNDX,NFILE,fnm), */
+  /*   	    1,&gnx,&index,&grpname); */
+
+  get_index(&(top.atoms),indexfn,ngroups,isize0,index0,grpname);
+
+  /* XXX */
+  if (bMolecular) {
+    gmx_fatal(FARGS, "Sorry, -m option not working at the moment");
+     /* get info about topology etc */ 
+     mols=&(top.mols); 
+     atndx = mols->index; 
+
+     /* construct array molndx of mol indices in atndx if -m is set */ 
+     molndx = NULL; 
+     gnmol = -1; 
+     if (bMolecular) { 
+       msg ("Interpreting indexfile entries as parts of molecules and " 
+          "using \ntheir center of mass.\n"); 
+       snew (molndx, mols->nr); 
+       if ( (gnmol = mols_from_index(gindex, gnx, mols, molndx, mols->nr)) < 0) { 
+ 	gmx_fatal(FARGS, "Error: could not find  molecules.\n"); 
+       }; 
+       msg ("%-10s%10s%10s\n", "Group", "Molecules", "Atoms");       
+       msg ("%-10s%10d%10d\n", grpname,  gnmol, gnx); 
+       msg ("%-10s%10d%10d\n", "System", mols->nr, top.atoms.nr); 
+     }; 
+
+  } else {
+    isize = isize0;
+    index = index0;
+  }
+  /* ngroups == 1 at moment */
+  gnx = isize[0];
+  gindex = index[0];
+  ggrpname = grpname[0];
+  atoms = top.atoms.atom;
+  mols = &(top.mols);
+  atndx = mols->index;
   
   /* step size in ps from tpx file 
   dt = dt_tpx (ftp2fn_null(efTPS,NFILE,fnm));
   dmsg ("Read from the topology: stepsize delta_t = %3g ps\n", dt);
   */
-
-
-  /* get info about topology etc */
-  mols=&(top->blocks[ebMOLS]);
-  a = mols->a;
-  atndx = mols->index;
-
-  /* construct array molndx of mol indices in atndx if -m is set */
-  molndx = NULL;
-  gnmol = -1;
-  if (bMolecular) {
-    msg ("Interpreting indexfile entries as parts of molecules and "
-         "using \ntheir center of mass.\n");
-    snew (molndx, mols->nr);
-    if ( (gnmol = mols_from_index (index, gnx, mols, molndx, mols->nr)) < 0) {
-      gmx_fatal(FARGS, "Error: could not find  molecules.\n");
-    };
-    msg ("%-10s%10s%10s\n", "Group", "Molecules", "Atoms");      
-    msg ("%-10s%10d%10d\n", grpname,  gnmol, gnx);
-    msg ("%-10s%10d%10d\n", "System", mols->nr, top->atoms.nr);
-  };
 
   natoms = read_first_x(&status,ftp2fn(efTRX,NFILE,fnm),&t,&x,box);
   snew(x_s,natoms);
@@ -505,8 +561,8 @@ int main(int argc,char *argv[])
   sprintf (s_tmp, "R=%4g nm, z\\s1\\N=%4g nm, z\\s2\\N=%4g nm,"
 	   " V=%4g nm\\S3\\N, indexgroup %s",
 	     cavity.radius, cavity.z1, cavity.z2, cavity.vol,
-	     grpname);
-  sprintf(s_title, "%s in cavity", grpname);
+	     ggrpname);
+  sprintf(s_title, "%s in cavity", ggrpname); 
   out = xmgropen (opt2fn("-o",NFILE,fnm),
                   s_title, 
                   s_tmp, 
@@ -532,7 +588,7 @@ int main(int argc,char *argv[])
   */
   nmolecules = mols->nr; 
   snew (trckd[etxATOM], natoms);
-  snew (trckd[etxMOL],  nmolecules);
+  snew (trckd[etxMOL],  nmolecules);  /* XXX: not used bhile -m not working ?!? */
   
   do {
     /* write time in ps */
@@ -546,7 +602,14 @@ int main(int argc,char *argv[])
     totalmass = 0;  /* mass of all particles in the cavity */
 
     if (bMolecular) {
-      rm_pbc(&(top->idef),top->atoms.nr,box,x,x_s); /* remove pbc. */
+      /* IGNORED FOR THE MOMENT while -m is not supported until I figure out how to
+	 obtain the information form the new topology API.
+	 OB 2009-06-08 
+      */
+      gmx_fatal(FARGS, "Sorry, -m option not working at the moment");
+      /* ... following: old stuff (gmx 3.3.x) */
+
+      rm_pbc(&(top.idef),ePBC,top.atoms.nr,box,x,x_s); /* remove pbc. */
       
       /* Loop over all molecules. Calculate the center of mass for each
 	 molecule. To do so, give an index with all atoms in the molecule
@@ -562,9 +625,12 @@ int main(int argc,char *argv[])
       */
       for (i = 0; i < gnmol; i++) {
 	moleculesize = atndx[molndx[i]+1] - atndx[molndx[i]];
-	tm=calc_xcm(x_s, moleculesize, &a[atndx[molndx[i]]], 
-		  top->atoms.atom, xcm, FALSE);
-	/* We used non-pbc coordinates. Now put cm back in the box */
+	// BROKEN !!! Cannot be bothered to figure out how to get the atoms of each molecule
+	tm=calc_xcm(x_s, moleculesize, &(atndx[molndx[i]]),  // used to be a[atndx[...]] XXX BROKEN
+		  top.atoms.atom, xcm, FALSE);
+	/* We used non-pbc coordinates. Now put cm back in the box 
+	   XXX: only works for rectangular boxes !!!
+	 */
 	for (j = 0; j < DIM; j++) {
 	  if (xcm[j] < 0) xcm[j]+= box[j][j];
 	  if (xcm[j] > box[j][j]) xcm[j]-=box[j][j];
@@ -579,7 +645,7 @@ int main(int argc,char *argv[])
 	  tndx = track_ndx (etxMOL, molndx[i], trckd[etxMOL], gnmol);
 	  (trckd[etxMOL][tndx].time)++; 
 	  for (j = 0; j < moleculesize; j++) {
-	    tndx = track_ndx (etxATOM, a[atndx[molndx[i]] + j], 
+	    tndx = track_ndx (etxATOM, atndx[molndx[i]] + j,      /* XXX BROKEN  a[atndx[]] --> atndx */
 				       trckd[etxATOM], natoms);
 	    (trckd[etxATOM][tndx].time)++; 
 	  };
@@ -588,11 +654,10 @@ int main(int argc,char *argv[])
       /* End loop over all molecules */
     } else {
       for(i=0; i<gnx; i++) {
-	if ( bInCavity (x[index[i]], &cavity) ) {
+	if ( bInCavity(x[gindex[i]], &cavity) ) {
 	  nmol++;
-	  totalmass += top->atoms.atom[index[i]].m;
-	  tndx = track_ndx (etxATOM, index[i], 
-				     trckd[etxATOM], natoms);
+	  totalmass += atoms[gindex[i]].m;
+	  tndx = track_ndx(etxATOM,gindex[i],trckd[etxATOM],natoms);
 	  (trckd[etxATOM][tndx].time)++; 
 	};
       }
@@ -627,7 +692,7 @@ int main(int argc,char *argv[])
      molecules). Only track molecules above tau threshold 
   */
   do_tracking (fTrack, fTDat, trckd, bMolecular, 
-	       &(stime), top, grpname);
+	       &(stime), &top, ggrpname);
 
   /* clean up a bit */
   fprintf(stderr,"\n");

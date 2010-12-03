@@ -1,64 +1,6 @@
-/* $Id: count.c,v 1.5 2002/08/20 01:13:50 oliver Exp $
+/* $Id: count.c,v 1.7 2009/06/15 15:49:57 oliver Exp $
    
    specialised functions which are used in in g_count and g_flux
-
-   $Log: count.c,v $
-   Revision 1.5  2002/08/20 01:13:50  oliver
-   NEW:
-   * a_ri3Dc can resize (well, shrink) the grid (only z1, z2, R)
-     - needed setup_tgrid() and setup_corners() from g_ri3Dc for this
-       dirty hack, so they were moved into grid3D.c
-   FIXED:
-     calculation of the radius from the grid corners was wrong because I
-     used abs() where I should have used fabs(). Didn't have any impact
-     so far but for the readjustment of the grid it matters!
-
-   Revision 1.4  2002/08/19 17:16:36  oliver
-   - define units to measure a density in; currently available: unity
-     (nm^-3 -- canonical gromacs units), SPC (bulk SPC water at 300K,
-     1bar), molar (in mol/l), Angstroem (in A^-3)
-   - moved autoset_cavity() from g_ri3Dc into count.c (.h) so that I can
-     use it for g_count as well
-
-   Revision 1.3  2002/08/13 17:36:05  oliver
-   * new program: g_ri3Dc
-     . count molecules in grid cells
-     . effective radius pore profile
-     . volume calculation
-     . xy and xz density projections (xfarbe format)
-     No 3D grid output yet (lacking a suitable format)
-   * changed DR_DEFAULT to new value
-   * smaller changes of comments
-
-   Revision 1.1.2.5  2002/08/11 14:45:16  oliver
-   rename write_index() to fwrite_index() to avoid collision with a
-   gromacs function in index.c
-
-   Revision 1.1.2.4  2002/06/04 21:48:01  oliver
-   current working version of g_flux
-
-   Revision 1.1.2.3  2002/05/29 18:43:23  oliver
-   * g_flux writes index of all mols/atoms that crossed the pore
-   * new function list_add_atomid (const atom_id, int *, atom_id *) in utilgmx.c:
-     add an atom_id to list if its not allready in there. Sort list later with
-     quicksort(list, 0, last)
-   * write_index() in count.c: clean up of do_tracking() from g_count.c;
-     writes the contents of list into an index (either as residue numbers
-     ('molecules') or atom ids
-   In g_flux:
-   * store net flux in t_flux
-   * new: update_result(); updates t_result from internal values
-   * added the list of particles that crossed to t_result
-   * inline a few functions
-   * HIDE -dR option
-   * prune unused variables
-   * only allocate for gnx atoms (not natoms)
-
-   Revision 1.1.2.2  2002/05/27 23:52:04  oliver
-   first working version of g_flux (working means: compiles, does not core dump, results look vaguely sensible)
-
-   Revision 1.1.2.1  2002/05/27 12:21:25  oliver
-   Moved common functions and definition for g_count, g_sldist, g_flux into count.[ch]. g_count compiles
 
 */
 
@@ -115,8 +57,8 @@ bool autoset_cavity (t_cavity *cavity,matrix box,int npa,t_pargs pa[]) {
 }
 
 
-void x2molxcm (t_topology *top, atom_id *molndx, int gnmol, matrix box, 
-	      rvec *x, rvec *x_s, rvec *xmol_cm) {
+void x2molxcm (t_topology *top, int ePBC, atom_id *molndx, int gnmol, matrix box, 
+	       rvec *x, rvec *x_s, rvec *xmol_cm) {
   /* put molecular center of mass coordinates into xmol_cm (must have
      at least gnmol entries allocated!) */
   t_block   *mols;             /* all molecules in system    */
@@ -126,7 +68,7 @@ void x2molxcm (t_topology *top, atom_id *molndx, int gnmol, matrix box,
   int       i,j;
 
   /* remove pbc. */
-  rm_pbc(&(top->idef),top->atoms.nr,box,x,x_s); 
+  rm_pbc(&(top->idef),ePBC,top->atoms.nr,box,x,x_s); 
 
   /* Loop over all molecules. Calculate the center of mass for each
      molecule. To do so, give an index with all atoms in the molecule
@@ -140,13 +82,14 @@ void x2molxcm (t_topology *top, atom_id *molndx, int gnmol, matrix box,
      molecule index ( mols_from_index() )
   */
 
-  mols=&(top->blocks[ebMOLS]);
-  a = mols->a;
+  mols=&(top->mols);
   atndx = mols->index;
+  // a = mols->a;
 
   for (i = 0; i < gnmol; i++) {
     moleculesize = atndx[molndx[i]+1] - atndx[molndx[i]];
-    calc_xcm(x_s, moleculesize, &a[atndx[molndx[i]]], 
+    // calc_xcm(x_s, moleculesize, &a[atndx[molndx[i]]], 
+    calc_xcm(x_s, moleculesize, &(atndx[molndx[i]]),       // XXX BROKEN
 	     top->atoms.atom, xcm, FALSE);
   
     /* We used non-pbc coordinates. Now put cm back in the box */
@@ -174,12 +117,12 @@ real npbc2com (t_topology *top, atom_id *molndx, matrix box, rvec *x_s,
   int       j;
 
 
-  mols=&(top->blocks[ebMOLS]);
-  a = mols->a;
+  mols=&(top->mols);
+  // a = mols->a;
   atndx = mols->index;
 
   moleculesize = atndx[molndx[i]+1] - atndx[molndx[i]];
-  tm=calc_xcm(x_s, moleculesize, &a[atndx[molndx[i]]], 
+  tm=calc_xcm(x_s, moleculesize, &(atndx[molndx[i]]),           // XXX BROKEN
 	      top->atoms.atom, xcm, FALSE);
   
   /* We used non-pbc coordinates. Now put cm back in the box */
@@ -192,7 +135,7 @@ real npbc2com (t_topology *top, atom_id *molndx, matrix box, rvec *x_s,
 
 
 
-bool bInCavity (rvec x, t_cavity *cavity) {
+bool bInCavity (const rvec x, const t_cavity *cavity) {
 
   if (x[ZZ] > cavity->z1 && x[ZZ] < cavity->z2) {
     return (ldist (x, cavity->axis, cavity->cpoint) < cavity->radius);
@@ -209,35 +152,37 @@ int mols_from_index (atom_id *index, int gnx, t_block *mols,
   
   nr_mol = 0;
 
-  for (i = 0; i < gnx; i++) {
-    /* check every single atom in the index file against all entries
-       in the molecules block (BUG: only find corresponding molecule
-       if we hit the first entry in a[], ie the one that the
-       mol->index points to. Should really sweep thru the atoms for each
-       molecule(size) as well) 
-    */
-    k = 0;
-    while ( mols->a[mols->index[k]] != index[i] && k < mols->nr )
-      { k++; };
-    if (k < mols->nr) {
-      /* found one: add found molindex k to molndx if not already there */
-      l = nr_mol;
-      while ( molndx[--l] != k && l >= 0);
-      if (l < 0) {
-	assert (nr_mol < max_mol);
-	molndx[nr_mol++] = k;
-#ifdef DEBUG
-	dfprintf ("mols_from_index(): molndx[%5d] = %5d\n", nr_mol-1, k);
-#endif
-      };
-    };
+  /* XXX: COMPLETELY BROKEN */
+
+/*   for (i = 0; i < gnx; i++) { */
+/*     /\* check every single atom in the index file against all entries */
+/*        in the molecules block (BUG: only find corresponding molecule */
+/*        if we hit the first entry in a[], ie the one that the */
+/*        mol->index points to. Should really sweep thru the atoms for each */
+/*        molecule(size) as well)  */
+/*     *\/ */
+/*     k = 0; */
+/*     while ( mols->a[mols->index[k]] != index[i] && k < mols->nr ) */
+/*       { k++; }; */
+/*     if (k < mols->nr) { */
+/*       /\* found one: add found molindex k to molndx if not already there *\/ */
+/*       l = nr_mol; */
+/*       while ( molndx[--l] != k && l >= 0); */
+/*       if (l < 0) { */
+/* 	assert (nr_mol < max_mol); */
+/* 	molndx[nr_mol++] = k; */
+/* #ifdef DEBUG */
+/* 	dfprintf ("mols_from_index(): molndx[%5d] = %5d\n", nr_mol-1, k); */
+/* #endif */
+/*       }; */
+/*     }; */
       
-  };
+/*   }; */
 
   return nr_mol;
 }
 
-void print_ldist (rvec x, t_cavity *cavity, atom_id idx, real mass) {
+void print_ldist (const rvec x, const t_cavity *cavity, const atom_id idx, const real mass) {
   char *s;
   bool incav;
 
@@ -271,7 +216,7 @@ void fwrite_index (FILE *fp, atom_id *list, enum ndxtype list_type,
   int i,j;
   bool bDebugOutput;
 
-  atom_id *a, *atndx;        /* indices from block.        */
+  atom_id *atndx;        /* indices from block.        */
   t_block *mols;             /* all molecules in system    */
   t_atom  *atom;             /* all atoms */		 
   int     moleculesize;
@@ -289,8 +234,7 @@ void fwrite_index (FILE *fp, atom_id *list, enum ndxtype list_type,
 
 
   /* needed for translation mols -> atom ids */
-  mols  = &(top->blocks[ebMOLS]);
-  a     = mols->a;
+  mols  = &(top->mols);
   atndx = mols->index;
   /* translation atom_id -> resnr 
      top->atoms->atom[atom_id]->resnr
@@ -311,7 +255,7 @@ void fwrite_index (FILE *fp, atom_id *list, enum ndxtype list_type,
 	for (j = 0; j < moleculesize; j++, counter++) {
 	  /* ... fetch all atoms of this molecule */
 	  /* ADD +1 when WRITING (external) index file !!! */
-	  fprintf (fp, "%5u %s", a[atndx[list[i]]+j] + 1, 
+	  fprintf (fp, "%5u %s", atom[atndx[list[i]]+j].atomnumber + 1,   // XXX possibly BROKEN
 		   NEWLINE(LNDXMX,counter));
 	};
       };
@@ -319,7 +263,7 @@ void fwrite_index (FILE *fp, atom_id *list, enum ndxtype list_type,
 	/* either etxMOL or etxATOM without molecules */
 	for (i = 0; i < nmx; i++) {
 	  atom_id igmx;
-	  igmx = (type == etxMOL ? a[atndx[list[i]]] : list[i]);
+	  igmx = (type == etxMOL ? atom[atndx[list[i]]].atomnumber : list[i]); // XXX poss. BROKEN for etxMOL
 	  /* ADD +1 when WRITING (external) index file !!! */
 	  fprintf (fp, "%5u %s", atom[igmx].resnr + 1, NEWLINE(LNDXMX,i));
 	};
@@ -351,8 +295,7 @@ void dump_atomlist (FILE *fp, enum ndxtype type, atom_id *list,
   };
 
   /* needed for translation mols -> atom ids */
-  mols  = &(top->blocks[ebMOLS]);
-  a     = mols->a;
+  mols  = &(top->mols);
   atndx = mols->index;
   /* translation atom_id -> resnr 
      top->atoms->atom[atom_id]->resnr
@@ -362,7 +305,7 @@ void dump_atomlist (FILE *fp, enum ndxtype type, atom_id *list,
   for (i = 0; i < nmx; i++) {
     atom_id igmx;
 
-    igmx = (type == etxMOL ? a[atndx[list[i]]] : list[i]); 
+    igmx = (type == etxMOL ? atndx[list[i]] : list[i]);  // XXX BROKEN for etxMOL
     
     if (!bDebugOutput) {
     fprintf (fp, "%6u %6u %6s\n",

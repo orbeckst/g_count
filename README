@@ -1,6 +1,6 @@
-$Id: README,v 1.6 2009/01/19 16:19:45 oliver Exp $
+$Id: README,v 1.7 2009/06/08 16:42:06 oliver Exp $
 Additional programs for analysis of Gromacs output.
-Copyright (c) 2001-2008 Oliver Beckstein <oliver.beckstein@bioch.ox.ac.uk>
+Copyright (c) 2001-2009 Oliver Beckstein <oliver.beckstein@bioch.ox.ac.uk>
 
 Contributors:
    Marc Baaden (xpm output in g_zcoord)
@@ -26,7 +26,7 @@ or find it online at http://www.gnu.org/copyleft/gpl.html
 
 
 ---------------------------------------------------------------
-  THIS VERSION OF g_count ONLY COMPILES AGAINST GROMACS 3.3.3
+  THIS VERSION OF g_count ONLY COMPILES AGAINST GROMACS 4.0.x
 ---------------------------------------------------------------
 
 
@@ -40,25 +40,30 @@ coordinate axis.
 g_flux calculates fluxes by analyzing the trajectories of molecules
 passing through a cylinder.
 
+
+[g_zcoord IS CURRENTLY BROKEN AND DOES NOT COMPILE]
+
 g_zcoord simply writes out the z-coordinate of molecules in a
 cylindrical region or makes a xpm matrix for quick visualization. You
 may be able to do pretty much the same with g_traj and some
-post-processing.
+post-processing.  
+
+
 
 
 
 Required software
 =================
 
-You must have a compiled version of Gromacs 3.3.1 (or probably later)
+You must have a compiled version of Gromacs 4.0.2 (or probably later)
 with all libraries and include files, and the appropriate
 C-compiler. If you compiled Gromacs with X11 support see the end of
 this README if you have problems.
 
-Note that this software now requires at least Gromacs 3.3.1 to
+Note that this software now requires at least Gromacs 4.0.x to
 compile. This version is NOT backwards compatible. Use an older tar
-ball (g_count_0.1.tar.bz2) for Gromacs 3.2.1 (there are no substantial
-changes in the code itself).
+ball (eg g_count_0.1.tar.bz2) for Gromacs 3.2.1 (there are no substantial
+changes in the code itself) or g_count_0.1.tar.bz2 for Gromacs 3.3.3.
 
 
 
@@ -125,6 +130,11 @@ or
 Problems, Questions
 ===================
 
+* Gromacs 4.x: g_zcoord has not been adapted for gromacs 4.x; use
+  g_traj.
+  Versions of g_flux and g_count for 3.x were able to handle
+  molecules; the current code base can only handle atoms. Use water
+  oxygens when analysing water.
 
 * Do I need the CVS version somewhere? Would it be better to
   reinstall gromacs 3.1.4 too?  
