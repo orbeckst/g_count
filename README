@@ -1,6 +1,6 @@
-$Id: README,v 1.4 2008/01/14 15:14:05 oliver Exp $
+$Id: README,v 1.6 2009/01/19 16:19:45 oliver Exp $
 Additional programs for analysis of Gromacs output.
-Copyright (c) 2001-2008 Oliver Beckstein <oliver@biop.ox.ac.uk>
+Copyright (c) 2001-2008 Oliver Beckstein <oliver.beckstein@bioch.ox.ac.uk>
 
 Contributors:
    Marc Baaden (xpm output in g_zcoord)
@@ -22,6 +22,12 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 or find it online at http://www.gnu.org/copyleft/gpl.html
+
+
+
+---------------------------------------------------------------
+  THIS VERSION OF g_count ONLY COMPILES AGAINST GROMACS 3.3.3
+---------------------------------------------------------------
 
 
 
@@ -119,13 +125,6 @@ or
 Problems, Questions
 ===================
 
-* What is the difference between GMX_TOP_DIR and MY_GMX_TOP_DIR?
-
-> I use it to switch between installations; I think you can simply
-> forget about MY_*. As you can see, GMX_TOP_DIR is used to define
-> GMX_LIB_DIR and GMX_INCLUDE_DIR: that's where the Gromacs libraries
-> libmd.a and libgmx.a and the include files live. If that's different
-> for you then you have to change it
 
 * Do I need the CVS version somewhere? Would it be better to
   reinstall gromacs 3.1.4 too?  
@@ -169,6 +168,8 @@ Problems, Questions
 >
 > LDFLAGS += -L/usr/X11R6/lib -lX11 -lXm -lXaw -lXpm
 
-
+* If compilation fails and error messages mention 'fatal.h' then you
+  are compiling against the wrong version of Gromacs. Please see the
+  top of this file for the compatible versions.
 
 

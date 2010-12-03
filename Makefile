@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.32 2008/01/14 14:10:14 oliver Exp $
+# $Id: Makefile,v 1.34 2009/01/19 16:19:45 oliver Exp $
 #
 #
 # Makefile for the compilation of g_count and relatives
@@ -11,23 +11,27 @@
 #  WITH_MPI     use mpi compiler instead of gcc
 #               (set CC and LD in the 'ifdef WITH_MPI' section)       
 
-GMX_TOP_DIR        := $(HOME)/Biop/Library/Gromacs/code/3.3.1
-MY_GMX_TOP_DIR     := $(HOME)/Biop/Library/Gromacs/code/3.3.1
-
+#------------------------------------------------------------
+# Make sure that the following variables are correct for your setup
+# 
+GMX_TOP_DIR        := $(HOME)/Biop/Library/Gromacs/code/3.3.3
+#
 # EXEC depends on your machine/OS
 #GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/i686-pc-linux-gnu#
 GMX_EXEC_PREFIX := $(GMX_TOP_DIR)#
 GMX_LIB_DIR     := $(GMX_EXEC_PREFIX)/lib#
-#GMX_INCLUDE_DIR := $(GMX_TOP_DIR)/include#
 GMX_INCLUDE_DIR := $(GMX_TOP_DIR)/include/gromacs#
-
-# this is only necessary for the creation of etags
-# (for compilation it is not important)
-GMX_SOURCE_DIR  := $(HOME)/Biop/Library/Gromacs/code/source/gromacs-3.3.1
 
 # install binaries to
 BIN_DIR := $(HOME)/bin
-#BIN_DIR := $(MY_GMX_TOP_DIR)/i686-pc-linux-gnu/bin
+
+#
+#------------------------------------------------------------
+
+# this is only necessary for the creation of etags
+# (for compilation it is not important)
+GMX_SOURCE_DIR  := $(HOME)/Biop/Library/Gromacs/code/source/gromacs-3.3.3
+
 
 CPPFLAGS += -I$(GMX_INCLUDE_DIR)
 
@@ -190,7 +194,7 @@ distclean: clean
 
 NAME  := g_count
 MAJOR := 0
-MINOR := 2
+MINOR := 3
 
 TAR_NAME := $(NAME)-$(MAJOR).$(MINOR).tar.bz2
 TAR_DIR  := $(NAME)-$(MAJOR).$(MINOR)
