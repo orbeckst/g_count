@@ -1,0 +1,42 @@
+Index: Makefile
+===================================================================
+RCS file: /opt/cvs-archive/Gromacs/Analysis/g_count/Makefile,v
+retrieving revision 1.26
+diff -c -r1.26 Makefile
+*** Makefile	17 Dec 2003 14:06:04 -0000	1.26
+--- Makefile	17 Dec 2003 14:07:52 -0000
+***************
+*** 10,16 ****
+  #               (set CC and LD in the 'ifdef WITH_MPI' section)       
+  
+  # this should be changed to /opt/gromacs/gromacs-3.0 in the future
+! GMX_TOP_DIR     := /sansom/linuxpacks/gmx314
+  MY_GMX_TOP_DIR     := /sansom/gfio/oliver/Gromacs/Gromacs-3.1.4
+  
+  # EXEC depends on your machine/OS
+--- 10,17 ----
+  #               (set CC and LD in the 'ifdef WITH_MPI' section)       
+  
+  # this should be changed to /opt/gromacs/gromacs-3.0 in the future
+! # synapse
+! GMX_TOP_DIR        := /packages/gromacs-3.1.4
+  MY_GMX_TOP_DIR     := /sansom/gfio/oliver/Gromacs/Gromacs-3.1.4
+  
+  # EXEC depends on your machine/OS
+***************
+*** 21,27 ****
+  
+  # this is only necessary for the creation of etags
+  # (for compilation it is not important)
+! GMX_SOURCE_DIR  := /sansom/linuxpacks/src/Gromacs/gromacs-3.0
+  
+  # install binaries to
+  BIN_DIR := $(HOME)/bin
+--- 22,28 ----
+  
+  # this is only necessary for the creation of etags
+  # (for compilation it is not important)
+! GMX_SOURCE_DIR  := /packages/gromacs
+  
+  # install binaries to
+  BIN_DIR := $(HOME)/bin

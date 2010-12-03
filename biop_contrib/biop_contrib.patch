@@ -1,0 +1,15 @@
+*** configure.ac~	Fri Oct 26 14:22:00 2001
+--- configure.ac	Tue Nov  6 21:17:05 2001
+***************
+*** 701,705 ****
+  include/Makefile include/types/Makefile
+  src/mdlib/Makefile src/kernel/Makefile src/tools/Makefile 
+! src/ngmx/Makefile src/contrib/Makefile scripts/Makefile admin/Makefile 
+  share/Makefile share/tutor/Makefile share/tutor/gmxdemo/Makefile 
+  share/tutor/nmr1/Makefile share/tutor/nmr2/Makefile 
+--- 701,705 ----
+  include/Makefile include/types/Makefile
+  src/mdlib/Makefile src/kernel/Makefile src/tools/Makefile 
+! src/ngmx/Makefile src/contrib/Makefile src/biop_contrib/Makefile scripts/Makefile admin/Makefile 
+  share/Makefile share/tutor/Makefile share/tutor/gmxdemo/Makefile 
+  share/tutor/nmr1/Makefile share/tutor/nmr2/Makefile 
