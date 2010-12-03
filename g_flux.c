@@ -1,7 +1,7 @@
 /*
- * $Id: g_flux.c,v 1.10 2008/01/14 15:14:05 oliver Exp $
+ * $Id: g_flux.c,v 1.11 2009/01/19 16:19:45 oliver Exp $
  */
-static char *SRCID_g_flux_c = "$Id: g_flux.c,v 1.10 2008/01/14 15:14:05 oliver Exp $";
+static char *SRCID_g_flux_c = "$Id: g_flux.c,v 1.11 2009/01/19 16:19:45 oliver Exp $";
 
 #include <math.h>
 #include <string.h>
@@ -19,7 +19,7 @@ static char *SRCID_g_flux_c = "$Id: g_flux.c,v 1.10 2008/01/14 15:14:05 oliver E
 #include "xvgr.h"
 #include "gstat.h"
 #include "names.h"
-#include "fatal.h"
+#include "gmx_fatal.h"
 #include "xf.h"
 #include "utilgmx.h"
 #include "count.h"

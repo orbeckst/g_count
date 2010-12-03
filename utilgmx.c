@@ -1,6 +1,9 @@
-/* $Id: utilgmx.c,v 1.5 2008/01/14 15:14:05 oliver Exp $
+/* $Id: utilgmx.c,v 1.6 2009/01/19 16:19:45 oliver Exp $
    everyday functions
    $Log: utilgmx.c,v $
+   Revision 1.6  2009/01/19 16:19:45  oliver
+   New version 0.3 for Gromacs 3.3.3 (breaks compilability with previous version)
+
    Revision 1.5  2008/01/14 15:14:05  oliver
    cleaned up and compiles with Gromacs 3.3.1; breaks backward compatibility with Gromacs 3.2.1
 
@@ -43,10 +46,10 @@
 
 */
 
-static char *SRCID_utilgmx_c = "$Id: utilgmx.c,v 1.5 2008/01/14 15:14:05 oliver Exp $";
+static char *SRCID_utilgmx_c = "$Id: utilgmx.c,v 1.6 2009/01/19 16:19:45 oliver Exp $";
 
 #include "utilgmx.h"
-#include "fatal.h"
+#include "gmx_fatal.h"
 #include "futil.h"
 #include "maths.h"
 #include "smalloc.h"
