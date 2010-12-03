@@ -1,6 +1,9 @@
-/* $Id: utilgmx.c,v 1.4 2002/08/13 17:36:05 oliver Exp $
+/* $Id: utilgmx.c,v 1.5 2008/01/14 15:14:05 oliver Exp $
    everyday functions
    $Log: utilgmx.c,v $
+   Revision 1.5  2008/01/14 15:14:05  oliver
+   cleaned up and compiles with Gromacs 3.3.1; breaks backward compatibility with Gromacs 3.2.1
+
    Revision 1.4  2002/08/13 17:36:05  oliver
    * new program: g_ri3Dc
      . count molecules in grid cells
@@ -40,7 +43,7 @@
 
 */
 
-static char *SRCID_utilgmx_c = "$Id: utilgmx.c,v 1.4 2002/08/13 17:36:05 oliver Exp $";
+static char *SRCID_utilgmx_c = "$Id: utilgmx.c,v 1.5 2008/01/14 15:14:05 oliver Exp $";
 
 #include "utilgmx.h"
 #include "fatal.h"
@@ -74,16 +77,16 @@ real ***grid3_alloc(int nx, int ny, int nz) {
 
   /* allocate a row of 'ptr to ptr to rows' (= index by x values), length nx */
   snew(g,nx);
-  if (!g) fatal_error(-1,"grid3_alloc(): Cannot allocate memory for nx=%d\n",nx);
+  if (!g) gmx_fatal(FARGS,"grid3_alloc(): Cannot allocate memory for nx=%d\n",nx);
   
   /* allocate nx 'ptrs to rows' (length ny each) and set ptrs to them */
   snew(g[0],nx*ny);
-  if (!g) fatal_error(-1,"grid3_alloc(): Cannot allocate memory for nx*ny=%d*%d\n",
+  if (!g) gmx_fatal(FARGS,"grid3_alloc(): Cannot allocate memory for nx*ny=%d*%d\n",
 		      nx,ny);
     
   /* allocate nx*ny 'rows' (length nz each; these memory locations hold the reals) */
   snew(g[0][0],nx*ny*nz);
-  if (!g) fatal_error(-1,"grid3_alloc(): Cannot allocate memory for data "
+  if (!g) gmx_fatal(FARGS,"grid3_alloc(): Cannot allocate memory for data "
 		      "(nx*ny*nz=%d*%d%d)\n",nx,ny,nz);
 
   /* initialise all pointers (starting from the already initialised
@@ -113,11 +116,11 @@ real **grid2_alloc(int nx, int ny) {
 
   /* allocate a row of 'ptr to ptr to rows' (= index by x values), length nx */
   snew(g,nx);
-  if (!g) fatal_error(-1,"grid2_alloc(): Cannot allocate memory for nx=%d\n",nx);
+  if (!g) gmx_fatal(FARGS,"grid2_alloc(): Cannot allocate memory for nx=%d\n",nx);
   
   /* allocate nx 'ptrs to rows' (length ny each) and set ptrs to them */
   snew(g[0],nx*ny);
-  if (!g) fatal_error(-1,"grid2_alloc(): Cannot allocate memory for nx*ny=%d*%d\n",
+  if (!g) gmx_fatal(FARGS,"grid2_alloc(): Cannot allocate memory for nx*ny=%d*%d\n",
 		      nx,ny);
 
   for(i=1;i<nx;i++) g[i]=g[i-1]+ny;

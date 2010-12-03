@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.30 2004/03/18 01:04:28 oliver Exp $
+# $Id: Makefile,v 1.32 2008/01/14 14:10:14 oliver Exp $
 #
 #
 # Makefile for the compilation of g_count and relatives
@@ -11,12 +11,11 @@
 #  WITH_MPI     use mpi compiler instead of gcc
 #               (set CC and LD in the 'ifdef WITH_MPI' section)       
 
-# this should be changed to /opt/gromacs/gromacs-3.0 in the future
-# synapse
-GMX_TOP_DIR        := /sansom/fedpacks
-MY_GMX_TOP_DIR     := /sansom/gfio/oliver/Gromacs/Gromacs-3.1.4
+GMX_TOP_DIR        := $(HOME)/Biop/Library/Gromacs/code/3.3.1
+MY_GMX_TOP_DIR     := $(HOME)/Biop/Library/Gromacs/code/3.3.1
 
 # EXEC depends on your machine/OS
+#GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/i686-pc-linux-gnu#
 GMX_EXEC_PREFIX := $(GMX_TOP_DIR)#
 GMX_LIB_DIR     := $(GMX_EXEC_PREFIX)/lib#
 #GMX_INCLUDE_DIR := $(GMX_TOP_DIR)/include#
@@ -24,7 +23,7 @@ GMX_INCLUDE_DIR := $(GMX_TOP_DIR)/include/gromacs#
 
 # this is only necessary for the creation of etags
 # (for compilation it is not important)
-GMX_SOURCE_DIR  := /sansom/fedpacks/src/BUILD/gromacs-3.2.1
+GMX_SOURCE_DIR  := $(HOME)/Biop/Library/Gromacs/code/source/gromacs-3.3.1
 
 # install binaries to
 BIN_DIR := $(HOME)/bin
@@ -39,8 +38,6 @@ CFLAGS   +=  -g -O2 -fomit-frame-pointer -finline-functions \
              -funroll-loops -Wall -Wno-unused 
 endif
 
-# static (but g_ri3Dc segfaults at the end)
-#LDFLAGS  +=  -lm -Wl,-static -L$(GMX_LIB_DIR) -lmd -lgmx 
 
 # dynamic linking of libgm, require LD_LIBRARY_PATH
 #LD_LIBRARY_PATH += /usr/src/gm-1.6.3_Linux/binary/lib/
@@ -60,7 +57,7 @@ endif
 
 INSTALL := install
 
-AUX_NAMES :=  utilgmx xf count plt
+AUX_NAMES :=  utilgmx xf count
 AUX_SRC := $(addsuffix .c, $(AUX_NAMES))
 AUX_H   := $(addsuffix .h, $(AUX_NAMES))
 AUX_OBJ := $(addsuffix .o, $(AUX_NAMES))
@@ -84,26 +81,6 @@ G_FLUX_H   := $(AUX_H)
 G_FLUX_OBJ := g_flux.o 
 
 
-GRID_SRC := grid3D.c xdr_grid.c 
-GRID_H   := grid3D.h xdr_grid.h
-GRID_OBJ := grid3D.o xdr_grid.o
-
-# g_ri3Dc
-G_RI3DC     := g_ri3Dc 
-G_RI3DC_SRC := g_ri3Dc.c 
-G_RI3DC_H   := $(AUX_H)  $(GRID_H) 
-G_RI3DC_OBJ := g_ri3Dc.o $(GRID_OBJ)
-
-# a_ri3Dc
-A_RI3DC     := a_ri3Dc 
-A_RI3DC_SRC := a_ri3Dc.c 
-A_RI3DC_H   := $(AUX_H)  plt.h $(GRID_H)  
-A_RI3DC_OBJ := a_ri3Dc.o plt.o $(GRID_OBJ)
-
-DIST_GRIDCOUNT_H   := $(sort  $(A_RI3DC_H) $(G_RI3DC_H) $(GRID_H) $(AUX_H))
-DIST_GRIDCOUNT_SRC := $(sort  $(A_RI3DC_SRC) $(G_RI3DC_SRC) $(GRID_SRC) $(AUX_SRC))
-DIST_GRIDCOUNT := gridcount.tar.gz 
-
 # template: g_xx
 G_XX     := g_xx
 G_XX_SRC := g_xx.c 
@@ -114,8 +91,6 @@ ALL_PROG := $(G_COUNT) $(G_FLUX) $(G_ZCOORD) $(G_RI3DC) $(A_RI3DC)
 ALL_SOURCES := $(G_COUNT_SRC) $(G_COUNT_H) \
                $(G_FLUX_SRC) $(G_FLUX_H) \
                $(G_ZCOORD_SRC) $(G_ZCOORD_H) \
-	       $(G_RI3DC_SRC) $(G_RI3DC_H) \
-	       $(A_RI3DC_SRC) $(A_RI3DC_H) \
 	       $(AUX_SRC) $(AUX_H)
 
 define usage
@@ -134,8 +109,6 @@ define usage
 \nInstall targets: \
 \n   all          compile \`$(ALL_PROG)' (default)\
 \n   install      install all compiled programs in BIN_DIR\
-\n   install-grid for \`$(G_RI3DC) $(A_RI3DC)'\
-\n   dist-grid    creates a distribution tarball $(DIST_GRIDCOUNT)\
 \n   clean        clean object files etc\
 \n   distclean    remove every generated file\
 \n\
@@ -180,21 +153,6 @@ $(G_FLUX_OBJ): $(G_FLUX_SRC) $(G_FLUX_H)
 
 
 
-#.phony: grid
-#grid: $(G_RI3DC) $(A_RI3DC)
-
-$(G_RI3DC): $(G_RI3DC_OBJ) $(AUX_OBJ) 
-	$(LD) -o $@ $^ $(LDFLAGS)
-$(G_RI3DC_OBJ): $(G_RI3DC_SRC) $(G_RI3DC_H)
-
-
-$(A_RI3DC): $(A_RI3DC_OBJ) $(AUX_OBJ) 
-	$(LD) -o $@ $^ $(LDFLAGS)
-$(A_RI3DC_OBJ): $(A_RI3DC_SRC) $(A_RI3DC_H)
-
-
-
-
 $(G_XX): $(G_XX_OBJ) $(AUX_OBJ) 
 	$(LD) -o $@ $^ $(LDFLAGS)
 $(G_XX_OBJ): $(G_XX_SRC) $(G_XX_H)
@@ -217,35 +175,29 @@ install:
 	    fi; \
 	done;
 
-install-grid:  $(G_RI3DC) $(A_RI3DC)
-	for p in $^; do \
-	    if [ -e $$p ]; then  \
-	       echo ">>> Installing file \`$$p' ..."; \
-	       $(INSTALL) -v -m 755 $$p $(BIN_DIR); \
-	    fi; \
-	done;
-
 
 clean:
 	-rm core *.o *.a *~ 
 
 distclean: clean
-	-rm $(ALL_PROG)
-
-dist-grid: $(DIST_GRIDCOUNT)
-
-$(DIST_GRIDCOUNT):
-	-rm -rf grid
-	mkdir grid grid/examples
-	cp $(DIST_GRIDCOUNT_H) $(DIST_GRIDCOUNT_SRC)  grid
-	cp examples/Makefile.grid examples/slicer.pl grid/examples
-	cp README.grid LICENSE grid
-	cp Makefile grid
-	cd grid; patch < ../Makefile_grid.patch
-	tar -zcvf $@ grid
+	-rm $(ALL_PROG) TAGS
 
 .cvsignore: Makefile
 	echo $(ALL_PROG) > $@
 	echo "*.log *~ core *.a TAGS tmp" >> $@
 	echo "*.xtc *.trr *.tpr *.edr *.ndx" >> $@
 	echo "*Test*" >> $@
+
+NAME  := g_count
+MAJOR := 0
+MINOR := 2
+
+TAR_NAME := $(NAME)-$(MAJOR).$(MINOR).tar.bz2
+TAR_DIR  := $(NAME)-$(MAJOR).$(MINOR)
+
+distribution: $(TAR_NAME)
+$(TAR_NAME): $(ALL_SOURCES) Makefile README examples
+	rm -rf $(TAR_DIR)
+	mkdir $(TAR_DIR)
+	cp -r $^ biop_contrib $(TAR_DIR)
+	tar -jcvf $@ $(TAR_DIR) && rm -rf $(TAR_DIR)

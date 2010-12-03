@@ -1,7 +1,7 @@
 /*
- * $Id: g_flux.c,v 1.6 2004/03/17 22:04:31 oliver Exp $
+ * $Id: g_flux.c,v 1.10 2008/01/14 15:14:05 oliver Exp $
  */
-static char *SRCID_g_flux_c = "$Id: g_flux.c,v 1.6 2004/03/17 22:04:31 oliver Exp $";
+static char *SRCID_g_flux_c = "$Id: g_flux.c,v 1.10 2008/01/14 15:14:05 oliver Exp $";
 
 #include <math.h>
 #include <string.h>
@@ -19,6 +19,7 @@ static char *SRCID_g_flux_c = "$Id: g_flux.c,v 1.6 2004/03/17 22:04:31 oliver Ex
 #include "xvgr.h"
 #include "gstat.h"
 #include "names.h"
+#include "fatal.h"
 #include "xf.h"
 #include "utilgmx.h"
 #include "count.h"
@@ -233,9 +234,13 @@ real pore_crossing (const rvec x, const rvec x_last, const real t,
       inflx->t = t;
       inflx->u = u;
     } else {
-      /* check for a pore crossing.  If uninitialised (molecule
-	 started in cavity), u==0, and thus this test will fail 
-         (and the residency time is computed from t=0) */
+      /* so we have an EXIT event (divergence == -1) */
+      
+      /* The following test is useless---here u>0 or u<0 because we
+         have a crossing. inflx->u==0 for molecules which _started_ in
+         the pore, but also inflx->t = 0 in this case so one should be
+         able to say 'tau = t - inflx->t' in all cases. Ill leave it
+         for the time being.... no harm done by doing so */
       tau = (u != 0) ? t - inflx->t : t;
       ires = (int)floor(tau/res->resDelta);  /* index in residency histogram */
       if (ires > RESIDENCY_BINS - 2) {
@@ -245,13 +250,15 @@ real pore_crossing (const rvec x, const rvec x_last, const real t,
       } 
       
       if (u == inflx->u) {
-	/* complete pore crossing ! */
+	/* complete pore crossing !  (do not consider molecules that
+           started in the cavity (inflx->u == 0))
+         */
 	t_flux *PHI;
 	
 	PHI = &(res->PHI);
 	PHI->tau  += tau;
 	if (u>0) { PHI->up++;}
-	else     { PHI->down--;};
+	else     { PHI->down--;}; 
 	/* CPHI, PHI->tau, PHI->net, PHI->total are updated en bloc in
            main()->update_result() at the end of the frame. */
 	list_add_atomid (inflx->id, &(res->ncr), res->crossed);
@@ -421,7 +428,7 @@ int main(int argc,char *argv[])
          "using \ntheir center of mass.\n");
     snew (molndx, mols->nr);
     if ( (gnmol = mols_from_index (index, gnx, mols, molndx, mols->nr)) < 0) {
-      fatal_error (1, "Error: could not find  molecules.\n");
+      gmx_fatal(FARGS, "Error: could not find  molecules.\n");
     };
     msg ("%-10s%10s%10s\n", "Group", "Molecules", "Atoms");      
     msg ("%-10s%10d%10d\n", grpname,  gnmol, gnx);

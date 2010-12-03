@@ -1,11 +1,11 @@
 /*
- * $Id: g_count.c,v 1.33 2004/03/17 22:04:31 oliver Exp $
+ * $Id: g_count.c,v 1.34 2008/01/14 15:14:05 oliver Exp $
  *
  * This program is based on a Gromacs 2.0 g_* program 
  * see http://www.gromacs.org
  *
  */
-static char *SRCID_g_count_c = "$Id: g_count.c,v 1.33 2004/03/17 22:04:31 oliver Exp $";
+static char *SRCID_g_count_c = "$Id: g_count.c,v 1.34 2008/01/14 15:14:05 oliver Exp $";
 
 #include <math.h>
 #include <string.h>
@@ -25,6 +25,7 @@ static char *SRCID_g_count_c = "$Id: g_count.c,v 1.33 2004/03/17 22:04:31 oliver
 #include "gstat.h"
 #include "princ.h"
 #include "names.h"
+#include "fatal.h"
 #include "xf.h"
 #include "utilgmx.h"
 #include "count.h"
@@ -271,7 +272,7 @@ int track_ndx (enum ndxtype type, atom_id atom,
   if (!tracked && atom == NO_ATID)   return ntr[type];
   
   if (ntr[type] > natoms) {
-    fatal_error (1, "track_ndx(): number of tracked %s"
+    gmx_fatal(FARGS, "track_ndx(): number of tracked %s"
 		 " ntr[%s]=%d exceeds total number of %s %d.\n",
 		 ENDXTYPE(type), ENDXTYPE(type), ENDXTYPE(type),
 		 ntr[type], natoms);
@@ -472,7 +473,7 @@ int main(int argc,char *argv[])
          "using \ntheir center of mass.\n");
     snew (molndx, mols->nr);
     if ( (gnmol = mols_from_index (index, gnx, mols, molndx, mols->nr)) < 0) {
-      fatal_error (1, "Error: could not find  molecules.\n");
+      gmx_fatal(FARGS, "Error: could not find  molecules.\n");
     };
     msg ("%-10s%10s%10s\n", "Group", "Molecules", "Atoms");      
     msg ("%-10s%10d%10d\n", grpname,  gnmol, gnx);
