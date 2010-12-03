@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.44 2009/07/02 15:31:41 oliver Exp $
+# $Id: Makefile,v 1.45 2009/07/22 15:31:14 oliver Exp $
 #
 #
 # Makefile for the compilation of g_count and relatives
@@ -14,13 +14,13 @@
 #------------------------------------------------------------
 # Make sure that the following variables are correct for your setup
 # 
-#GMX_TOP_DIR        := $(HOME)/Library/Gromacs/version/4.0.2
-GMX_TOP_DIR         := /sansom/fedpacks/opt/gromacs/4.0.4
+GMX_TOP_DIR        := $(HOME)/Library/Gromacs/version/4.0.2
+#GMX_TOP_DIR         := /sansom/fedpacks/opt/gromacs/4.0.4
 #
 # EXEC depends on your machine/OS
 ARCH := $(shell ./config.guess)
-#GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/$(ARCH)
-GMX_EXEC_PREFIX := $(GMX_TOP_DIR)#
+GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/$(ARCH)
+#GMX_EXEC_PREFIX := $(GMX_TOP_DIR)#
 GMX_LIB_DIR     := $(GMX_EXEC_PREFIX)/lib#
 GMX_INCLUDE_DIR := $(GMX_TOP_DIR)/include/gromacs#
 
@@ -208,7 +208,7 @@ distclean: clean
 #                       minor are my releases
 NAME  := g_count
 MAJOR := gmx4
-MINOR := 4
+MINOR := 5
 
 TAR_NAME := $(NAME)-$(MAJOR).$(MINOR).tar.bz2
 TAR_DIR  := $(NAME)-$(MAJOR).$(MINOR)
@@ -216,7 +216,7 @@ TAR_DIR  := $(NAME)-$(MAJOR).$(MINOR)
 .phony: distribution upload
 
 distribution: $(TAR_NAME)
-$(TAR_NAME): $(ALL_SOURCES) Makefile README ChangeLog examples
+$(TAR_NAME): $(ALL_SOURCES) Makefile README ChangeLog examples config.guess
 	rm -rf $(TAR_DIR)
 	mkdir $(TAR_DIR)
 	cp -r $^ biop_contrib $(TAR_DIR)

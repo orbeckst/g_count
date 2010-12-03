@@ -1,9 +1,9 @@
-/* $Id: utilgmx.h,v 1.7 2009/06/15 15:49:57 oliver Exp $ */
+/* $Id: utilgmx.h,v 1.8 2009/07/22 15:31:14 oliver Exp $ */
 
 #ifndef _utilgmx_h
 #define _utilgmx_h
 
-static char *SRCID_utilgmx_h = "$Id: utilgmx.h,v 1.7 2009/06/15 15:49:57 oliver Exp $";
+static char *SRCID_utilgmx_h = "$Id: utilgmx.h,v 1.8 2009/07/22 15:31:14 oliver Exp $";
 
 #include <stdarg.h>
 #include "typedefs.h"
@@ -41,7 +41,7 @@ extern real ldist (const rvec x, const rvec p, const rvec c);
 extern real dt_tpx (char *fn);
 extern int  list_add_atomid (const atom_id, int *, atom_id *);
 
-static gmx_inline void new_rvec (rvec r, real x, real y, real z)
+static inline void new_rvec (rvec r, real x, real y, real z)
 {
   r[XX] = x;
   r[YY] = y;

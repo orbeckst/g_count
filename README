@@ -1,4 +1,4 @@
-$Id: README,v 1.9 2009/07/02 15:15:12 oliver Exp $
+$Id: README,v 1.10 2009/07/22 15:31:14 oliver Exp $
 Additional programs for analysis of Gromacs output.
 Copyright (c) 2001-2009 Oliver Beckstein <oliver.beckstein@bioch.ox.ac.uk>
 
@@ -29,6 +29,8 @@ or find it online at http://www.gnu.org/copyleft/gpl.html
   THIS VERSION OF g_count ONLY COMPILES AGAINST GROMACS 4.0.x
 ---------------------------------------------------------------
 
+(Specifically, it has been verified with 4.0.2; 4.0.4 appears to give
+wrong results for reasons that are still unclear. -- OB 2009-07-22)
 
 
 Short introduction
@@ -125,6 +127,13 @@ or
 
 Problems, Questions
 ===================
+
+* A water molecule is reported as crossing but in VMD I can see that
+  this is not the case. What is going on?
+
+  There appears to be a subtke problem when linking gflux gmx4.4
+  against Gromacs 4.0.4. It works for 4.0.2. Sorry, this is all that's
+  known at the moment.
 
 * Gromacs 4.x: 
   Versions of g_flux and g_count for 3.x were able to handle

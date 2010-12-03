@@ -1,7 +1,7 @@
 /*
- * $Id: g_flux.c,v 1.15 2009/07/02 16:05:48 oliver Exp $
+ * $Id: g_flux.c,v 1.16 2009/07/22 15:31:14 oliver Exp $
  */
-static char *SRCID_g_flux_c = "$Id: g_flux.c,v 1.15 2009/07/02 16:05:48 oliver Exp $";
+static char *SRCID_g_flux_c = "$Id: g_flux.c,v 1.16 2009/07/22 15:31:14 oliver Exp $";
 
 #include <math.h>
 #include <string.h>
@@ -106,13 +106,19 @@ typedef struct {
   real    resDelta;       /* bin width of the histogram */
 } t_result;
 
+typedef struct {
+  bool record_events;      /* are we writing the event log? */
+  bool record_sojourns;    /* also sojourns to log (makes it HUGE) */
+  FILE *fevents;           /* file handle for event log */
+} t_eventlog;
+
 void init_t_result (t_result *, int);
 void init_t_flux   (t_flux *);
 int update_result (t_result *);
-static gmx_inline bool bCrossing(const rvec, const rvec, const t_cavity *);
-static gmx_inline int  typeCrossing (const rvec, const t_cavity *);
+static inline bool bCrossing(const rvec, const rvec, const t_cavity *);
+static inline int  typeCrossing (const rvec, const t_cavity *);
 real pore_crossing (const rvec, const rvec, const real, 
-		    t_crossing *, t_cavity *, t_result *, FILE *);
+		    t_crossing *, t_cavity *, t_result *, t_eventlog *);
 
 void init_t_result (t_result *res, int ncrmax) {
   int i;
@@ -169,7 +175,7 @@ int update_result (t_result *result) {
 
 
 
-static gmx_inline bool bCrossing(const rvec x, const rvec x_last, 
+static inline bool bCrossing(const rvec x, const rvec x_last, 
 				 const t_cavity *cavity) {
   real zmin, zmax;
   /* particle crossed a boundary 1 or 2  if
@@ -181,7 +187,7 @@ static gmx_inline bool bCrossing(const rvec x, const rvec x_last,
          (zmin < cavity->z2 && cavity->z2 < zmax);
 };
 
-static gmx_inline int typeCrossing (const rvec x, const t_cavity *cavity) {
+static inline int typeCrossing (const rvec x, const t_cavity *cavity) {
   /* +1: into the cavity   Out->In, 
      -1: out of the cavity In->Out  */
   return (cavity->z1 < x[ZZ] && x[ZZ] < cavity->z2) ? 1 : -1;
@@ -191,7 +197,7 @@ static gmx_inline int typeCrossing (const rvec x, const t_cavity *cavity) {
 
 real pore_crossing (const rvec x, const rvec x_last, const real t, 
 		    t_crossing *inflx, t_cavity *cavity, t_result *res,
-		    FILE *fevents) {
+		    t_eventlog *eventlog) {
   int u;           /* +1: flow parallel pore axis, -1: anti parallel   */
   int divergence;  /* +1: flow into the pore,      -1: out of the pore */
   real tau;
@@ -288,10 +294,16 @@ real pore_crossing (const rvec x, const rvec x_last, const real t,
 
 	 ADD +1 when WRITING (external) index file numbers/atomids
        */
-      fprintf(fevents, "%7d  %9.1f %9.1f      %+2d %+2d  %9.1f   %s\n", 
-	      inflx->id + 1, 
-	      inflx->t, t,    inflx->u, u,
-	      tau, u == inflx->u ? "transition" : "sojourn");
+
+      /* Always write transition events u == inflx->u to log file (if
+	 eventlog required); 
+	 also record sojourns if explicitly asked for */
+      if (eventlog->record_events && (eventlog->record_sojourns || u == inflx->u)) {
+	fprintf(eventlog->fevents, "%7d  %9.1f %9.1f      %+2d %+2d  %9.1f   %s\n", 
+		inflx->id + 1, 
+		inflx->t, t,    inflx->u, u,
+		tau, u == inflx->u ? "transition" : "sojourn");
+      }
 
       /* erase (t,u): a valid crossing requires a new ENTER event */
       inflx->t = 0;
@@ -365,6 +377,11 @@ int main(int argc,char *argv[])
   };
   static real dR = DR_DEFAULT;   /* effective radius R* = R - dR [PERSONAL DEFAULT] but not really needed */
   static int  ngroups = 1;  /* not used >1 */
+  static t_eventlog  eventlog = {
+    FALSE,       /* create event log ? */
+    FALSE,       /* record sojourns -- enabling gives HUGE files */
+    NULL         /* file handle to log file */
+  };
   t_pargs pa[] = {
     { "-axis",   FALSE, etRVEC, {&(cavity.axis)},
       "Vector pointing parallel to the pore axis"},
@@ -380,6 +397,8 @@ int main(int argc,char *argv[])
       "HIDDENCorrect water-accessible cavity volume" },
     { "-ng",       FALSE, etINT, {&ngroups},
       "HIDDENNumber of groups to consider" },    
+    { "-sojourns", FALSE, etBOOL, {&(eventlog.record_sojourns)},
+      "write sojourn events to the event log (makes it HUGE)"},
   };
 
   t_filenm fnm[] = {
@@ -508,7 +527,8 @@ int main(int argc,char *argv[])
 		 "number of atoms");
   fData   = ffopen (opt2fn("-dat",  NFILE, fnm), "w");  
   fCData  = ffopen (opt2fn("-cdat", NFILE, fnm), "w");  
-  fevents = ffopen (opt2fn("-events", NFILE, fnm), "w");  
+  eventlog.fevents = ffopen (opt2fn("-events", NFILE, fnm), "w");
+  eventlog.record_events = (eventlog.fevents != NULL);
   fncr    = ffopen (opt2fn("-ncr",  NFILE, fnm), "w");  
 
   /* start counting .... */
@@ -527,12 +547,12 @@ int main(int argc,char *argv[])
     fclose(out);
     fclose(fData);
     fclose(fCData);
-    fclose(fevents);
+    fclose(eventlog.fevents);
     fclose(fncr);
     exit(EXIT_FAILURE);
   };
 
-  fprintf(fevents, "# g_flux event log\n"
+  fprintf(eventlog.fevents, "# g_flux event log\n"
 	  "# atomid: number of the atom (as used in index files)\n"
 	  "# t: time of enter/exit event\n"
 	  "# duration:  t_exit - t_enter\n"
@@ -556,7 +576,7 @@ int main(int argc,char *argv[])
 
     for(i=0; i<gnx; i++) {
       pore_crossing (x[gindex[i]], x_last[i], t, 
-		     &(influx[i]), &cavity, &result, fevents);
+		     &(influx[i]), &cavity, &result, &eventlog);
       copy_rvec(x[gindex[i]], x_last[i]);
     }
     update_result (&result);
@@ -606,7 +626,7 @@ int main(int argc,char *argv[])
   fclose(out);
   fclose(fData);
   fclose(fCData);
-  fclose(fevents);
+  fclose(eventlog.fevents);
   fclose(fncr);
   fclose(fres);
 
