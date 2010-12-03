@@ -14,26 +14,19 @@
 #------------------------------------------------------------
 # Make sure that the following variables are correct for your setup
 # 
-GMX_TOP_DIR        := $(HOME)/Library/Gromacs/version/4.0.2
-#GMX_TOP_DIR         := /sansom/fedpacks/opt/gromacs/4.0.4
-#
-# EXEC depends on your machine/OS
-ARCH := $(shell ./config.guess)
-GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/$(ARCH)
-#GMX_EXEC_PREFIX := $(GMX_TOP_DIR)#
-GMX_LIB_DIR     := $(GMX_EXEC_PREFIX)/lib#
-GMX_INCLUDE_DIR := $(GMX_TOP_DIR)/include/gromacs#
+
+GMX_LIB_DIR     := /usr/local/gromacs/lib#
+GMX_INCLUDE_DIR := /usr/local/gromacs/include/gromacs#
 
 # install binaries to
-#BIN_DIR := $(HOME)/bin
-BIN_DIR := $(GMX_EXEC_PREFIX)/bin
+BIN_DIR := $(HOME)/bin
 
 #
 #------------------------------------------------------------
 
 # this is only necessary for the creation of etags
 # (for compilation it is not important)
-GMX_SOURCE_DIR  := $(HOME)/Library/Gromacs/code/gromacs-4.0.2
+GMX_SOURCE_DIR  := 
 
 
 CPPFLAGS += -I$(GMX_INCLUDE_DIR)
