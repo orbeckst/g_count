@@ -1,28 +1,36 @@
-# $Id: Makefile,v 1.45 2009/07/22 15:31:14 oliver Exp $
+# GNU Makefile to compile the g_count and friends
 #
+#   Copyright (C) 2003-2010 Oliver Beckstein <orbeckst@gmailcom>
+#   This program is made available under the terms of the GNU Public License. 
+#   See the file COPYING or http://www.gnu.org/copyleft/gpl.html
 #
-# Makefile for the compilation of g_count and relatives
+# Edit BIN_DIR and the GMX_* variables to reflect the locations in
+# your setup. Run 'make help' for, um, help.
 
 # Makefile switches:
 # Switch on on commandline by setting them, eg 
 #        make DEBUG=1 WITH_MPI=1 g_count 
 #
 #  DEBUG        compile with debugging, -g and no optimisations
-#  WITH_MPI     use mpi compiler instead of gcc
-#               (set CC and LD in the 'ifdef WITH_MPI' section)       
 
-#------------------------------------------------------------
-# Make sure that the following variables are correct for your setup
+#====================================================================
 # 
-
-GMX_LIB_DIR     := /usr/local/gromacs/lib#
-GMX_INCLUDE_DIR := /usr/local/gromacs/include/gromacs#
-
-# install binaries to
-BIN_DIR := $(HOME)/bin
-
+# THE FOLLOWING VARIABLES MUST BE CHECKED/SET BY THE USER
+# -------------------------------------------------------
 #
-#------------------------------------------------------------
+# See the file INSTALL for instructions.
+#
+# Include directory for Gromacs header files:
+GMX_INCLUDE_DIR = /usr/local/gromacs/include/gromacs
+
+# Set the directories where Gromacs libraries are to be found:
+GMX_LIB_DIR     = /usr/local/gromacs/lib
+
+# Install binaries into:
+BIN_DIR = /usr/local/gromacs/bin
+#
+#
+#====================================================================
 
 # this is only necessary for the creation of etags
 # (for compilation it is not important)
@@ -54,12 +62,6 @@ endif
 # "ld: could not find entry point "start" (perhaps missing crt1.o) for inferred architecture i386"
 LD := $(CC)
 
-ifdef WITH_MPI
-  # on synapse.biop.ox.ac.uk, gmx linked with mpi stuff:
-  MPI_D := /usr/local/mpich-gm_GNU
-  CC := $(MPI_D)/bin/mpicc
-  LD := $(CC)
-endif
 
 INSTALL := install
 
@@ -121,25 +123,56 @@ define usage
 \n   distclean    remove every generated file\
 \n\
 \nMakefile switches:\
-\nSwitch on on commandline by setting them, eg \`make WITH_MPI=1 g_count' \
+\nSwitch on on commandline by setting them, eg \`make DEBUG=1 g_count' \
 \n  DEBUG        compile with debugging, -g and no optimisations\
-\n  WITH_MPI     use mpi compiler instead of gcc\
-\n               (set CC and LD in the 'ifdef WITH_MPI' section)\
-\n  ARCH         architecture string [$(ARCH)]\
 \n\
-\nUse \`make doxygen' to generate documentation in\
-\n       /sansom/public_html/localinfo/dev/g_count
+\nImportant Makefile parameters:\
+\nGMX_LIB_DIR...............$(GMX_LIB_DIR)\
+\nGMX_INCLUDE_DIR...........$(GMX_INCLUDE_DIR)\
+\n\
+\nBIN_DIR...................$(BIN_DIR)\
+\n\
+\nCC........................$(CC)\
+\nLD........................$(LD)\
+\nCPPFLAGS..................$(CPPFLAGS)\
+\nCFLAGS....................$(CFLAGS)\
+\nLDFLAGS...................$(LDFLAGS)
 endef
 # 'emacs font-lock
 
-.PHONY: all help doxygen
+define include_check
+if test -e $(GMX_INCLUDE_DIR)/xtcio.h; then \
+    echo "OK   Gromacs include directory found: $(GMX_INCLUDE_DIR)"; \
+else \
+    echo "BAD  Gromacs include directory missing. Set GMX_INCLUDE_DIR in Makefile!"; \
+fi
+endef
+
+_LIBS = $(wildcard $(GMX_LIB_DIR)/libgmx.*)
+define lib_check
+libs=($(_LIBS)); \
+if test "$${#libs[@]}" -gt 0; then \
+    echo "OK   Gromacs lib directory found: $(GMX_LIB_DIR)"; \
+else \
+    echo "BAD  Gromacs lib directory missing. Set GMX_LIB_DIR in Makefile!"; \
+fi
+endef
+
+.PHONY: all check help
 all:	$(ALL_PROG)
 
 help:
 	@echo -e "$(usage)"
 
-doxygen: doxygen.config
-	doxygen doxygen.config
+check:
+	@echo "============================================================"
+	@echo "Checking if GMX_INCLUDE_DIR and GMX_LIB_DIR are set properly"
+	@echo "============================================================"
+	@$(call include_check)
+	@$(call lib_check)
+	@echo "============================================================"
+	@echo "If you got any 'BAD' entries please read INSTALL."
+
 
 $(AUX_OBJ): $(AUX_SRC) $(AUX_H)
 

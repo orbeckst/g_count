@@ -1,0 +1,85 @@
+Counting permeation events: g_count and g_flux
+Copyright (C) 2003-2010 Oliver Beckstein <orbeckst@gmail.com>
+Released under the GNU Public License (see README)
+
+
+Compatibility with Gromacs
+==========================
+
+Every version of Gromacs introduces some changes that lead to some
+incompatibilities. Therefore, there are specific version of gridcount
+for different versions of Gromacs.
+
+The gridcount  version that comes with this file is for stable
+
+    Gromacs 4.0.x
+
+releases.
+
+Other version of gridcount can be found on the website (see README).
+
+
+
+
+Installation and Compilation 
+============================
+
+In order to compile the code you need to have the Gromacs include
+files and libgmx and libmd installed.
+
+In order to compile the programs in this directory on their own you
+will need an existing gromacs installation, i.e. the header files and
+the libmd and libgmx libraries.
+
+(0) Figure out where Gromacs is installed on your system; you need to
+    know the full path to the include directory and to the library
+    directory.
+
+    1. include directory: The directory that contains the files
+       xtcio.h, gmx_ana.h, atomprop.h, ...
+
+       On a default installation of Gromacs this would be 
+       '/usr/local/gromacs/include/gromacs'.
+
+    2. lib directory: The directory that contains the files
+       libgmx.a or libgmx.so or libgmx.dylib
+
+       On a default installation of Gromacs this would be
+       '/usr/local/gromacs/lib'.
+
+(1) Edit 'Makefile':
+    
+    1. Set 'GMX_INCLUDE_DIR' to the include directory found in Step 0.1
+
+    2. Set 'GMX_LIB_DIR' to the library dirctory found in Step 0.2
+
+    3. Set 'BIN_DIR' to a directory where you want to install the compiled
+       binaries; you will need write access to the directory.
+
+    `make help' shows your current settings.
+
+    `make check' tries to determine if you set the variables
+    correctly; please read the output carefully.
+
+(2) Compile the programs
+    
+       make
+
+(3)  Install
+      
+       make install
+
+Example:
+
+You can also forego editing the top-level Makefile and set important
+paths on the command line. For instance, if you installed Gromacs in
+/opt/gromacs then you would (probably) say
+
+  make GMX_INCLUDE_DIR=/opt/gromacs/include/gromacs GMX_LIB_DIR=/opt/gromacs/lib
+
+and then install it in your private bin directory
+
+  make BIN_DIR=$HOME/bin install
+
+(For more detailed explanations see the top of the top-level Makefile.)
+
