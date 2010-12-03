@@ -1,7 +1,7 @@
 /*
- * $Id: g_flux.c,v 1.13 2009/06/15 15:49:57 oliver Exp $
+ * $Id: g_flux.c,v 1.15 2009/07/02 16:05:48 oliver Exp $
  */
-static char *SRCID_g_flux_c = "$Id: g_flux.c,v 1.13 2009/06/15 15:49:57 oliver Exp $";
+static char *SRCID_g_flux_c = "$Id: g_flux.c,v 1.15 2009/07/02 16:05:48 oliver Exp $";
 
 #include <math.h>
 #include <string.h>
@@ -112,8 +112,7 @@ int update_result (t_result *);
 static gmx_inline bool bCrossing(const rvec, const rvec, const t_cavity *);
 static gmx_inline int  typeCrossing (const rvec, const t_cavity *);
 real pore_crossing (const rvec, const rvec, const real, 
-		    t_crossing *, t_cavity *, t_result *);
-int store_crossed (const atom_id, t_result *);
+		    t_crossing *, t_cavity *, t_result *, FILE *);
 
 void init_t_result (t_result *res, int ncrmax) {
   int i;
@@ -191,7 +190,8 @@ static gmx_inline int typeCrossing (const rvec x, const t_cavity *cavity) {
  
 
 real pore_crossing (const rvec x, const rvec x_last, const real t, 
-		   t_crossing *inflx, t_cavity *cavity, t_result *res) {
+		    t_crossing *inflx, t_cavity *cavity, t_result *res,
+		    FILE *fevents) {
   int u;           /* +1: flow parallel pore axis, -1: anti parallel   */
   int divergence;  /* +1: flow into the pore,      -1: out of the pore */
   real tau;
@@ -283,6 +283,16 @@ real pore_crossing (const rvec x, const rvec x_last, const real t,
          exited the same way) and crossing times */
       ++(res->residency[ires][1]);
 
+      /* event log of all events in the cavity: transition (crossing) and sojourns
+	 atomid   t_enter t_exit  u_enter u_exit  duration type
+
+	 ADD +1 when WRITING (external) index file numbers/atomids
+       */
+      fprintf(fevents, "%7d  %9.1f %9.1f      %+2d %+2d  %9.1f   %s\n", 
+	      inflx->id + 1, 
+	      inflx->t, t,    inflx->u, u,
+	      tau, u == inflx->u ? "transition" : "sojourn");
+
       /* erase (t,u): a valid crossing requires a new ENTER event */
       inflx->t = 0;
       inflx->u = 0;
@@ -312,24 +322,37 @@ int main(int argc,char *argv[])
     "                           t'=0\n"
     "                 <tau>(t)= C[tau]/|C[PHI]|\n"
     "------------------------------------------------------------------\n"
-    "-dat:  (time t in ps)\n"
+    "[TT]-dat[TT]:  (time t in ps)\n"
     "   t PHI(t) PHI+(t) PHI-(t) |PHI(t)| tau \n"
-    "-cdat:\n"
+    "[TT]-cdat[TT]:\n"
     "   t C[PHI] C[PHI+] C[PHI-] |C[PHI]| <tau>(t)[PAR]",
+    "[TT]-res[TT]:\n"
+    "   histogram of residency and crossing times[PAR]",
+    "[TT]-events[TT] is a potentially huge log of all entry and exit events:\n"
+    "    atomid: number of the atom (as used in index files)\n"
+    "    t: time of enter/exit event\n"
+    "    duration:  t_exit - t_enter\n"
+    "    u: direction of movement: +1 up, -1 down, +0 started in pore\n"
+    "    type: 'transition': particle crosses pore (u_enter == u_exit)\n"
+    "          'sojourn'   : particle enters and exits on same side\n"	 
+    "    ------------------------------------------------------------\n"
+    "    1        2       3       4       5       6        7\n"
+    "    atomid   t_enter t_exit  u_enter u_exit  duration type\n"
+    "    ------------------------------------------------------------[PAR]",
+    "[TT]-ncr[TT]:\n"
+    "   Gromacs index file of all particles that were observed to cross the pore.[PAR]"
     "Suggested use for water:\n",
     "create an index file for the water oxygens:\n",
     "  [TT]echo -e \"keep 0\\ndel 0\\nt OW\\nq\\n\" ",
     "| make_ndx -f in.pdb -o ow.ndx[TT]\n",
-    "and run [TT]g_count[TT} on it."
+    "and run [TT]g_flux[TT] on it."
   };
 
   static char *bugs[] = { 
-    "g_flux is currently ALPHA development.",
-    "The DEFAULT volume/radius correction is specific for MY setup",
     "Despite appearance it only makes sense to specify a pore axis "
     "approximately parallel to the z-axis because we only really base "
     "the definition of the boundaries on z coordinates",
-    "XMGrace files have the wrong suffix (xvg instead of agr)",
+    "The event log is a quick hack --- check results for consistency (e.g. times etc)."
   };
 
   static t_cavity   cavity = {   /* define volume to count mols in */
@@ -340,7 +363,7 @@ int main(int argc,char *argv[])
     -1,
     0                    /* volume - calculate later */
   };
-  static real dR = DR_DEFAULT;   /* effective radius R* = R - dR [PERSONAL DEFAULT]*/
+  static real dR = DR_DEFAULT;   /* effective radius R* = R - dR [PERSONAL DEFAULT] but not really needed */
   static int  ngroups = 1;  /* not used >1 */
   t_pargs pa[] = {
     { "-axis",   FALSE, etRVEC, {&(cavity.axis)},
@@ -367,7 +390,8 @@ int main(int argc,char *argv[])
     { efDAT, "-dat",  "flux", ffWRITE },
     { efDAT, "-cdat", "cflux", ffWRITE },
     { efNDX, "-ncr",  "crossed", ffWRITE },
-    { efDAT, "-res", "residency", ffWRITE }
+    { efDAT, "-res", "residency", ffWRITE },
+    { efDAT, "-events", "events", ffOPTWR },    
   };
 
   FILE       *out;           /* xmgr file with raw numbers */
@@ -375,6 +399,7 @@ int main(int argc,char *argv[])
   FILE       *fCData;        /* accumulated flux */
   FILE       *fncr;          /* index of crossing particles */
   FILE       *fres;          /* histogram of residency and crossing times */
+  FILE       *fevents;       /* log of entry/exit events */
   t_topology  top;           /* topology                   */
   int        ePBC;
   char       title[STRLEN];
@@ -483,6 +508,7 @@ int main(int argc,char *argv[])
 		 "number of atoms");
   fData   = ffopen (opt2fn("-dat",  NFILE, fnm), "w");  
   fCData  = ffopen (opt2fn("-cdat", NFILE, fnm), "w");  
+  fevents = ffopen (opt2fn("-events", NFILE, fnm), "w");  
   fncr    = ffopen (opt2fn("-ncr",  NFILE, fnm), "w");  
 
   /* start counting .... */
@@ -501,9 +527,22 @@ int main(int argc,char *argv[])
     fclose(out);
     fclose(fData);
     fclose(fCData);
+    fclose(fevents);
     fclose(fncr);
     exit(EXIT_FAILURE);
   };
+
+  fprintf(fevents, "# g_flux event log\n"
+	  "# atomid: number of the atom (as used in index files)\n"
+	  "# t: time of enter/exit event\n"
+	  "# duration:  t_exit - t_enter\n"
+	  "# u: direction of movement: +1 up, -1 down, +0 started in pore\n"
+	  "# type: 'transition': particle crosses pore (u_enter == u_exit)\n"
+	  "#       'sojourn'   : particle enters and exits on same side\n"	 
+	  "#------------------------------------------------------------\n"
+	  "# 1        2       3       4       5       6        7\n"
+	  "# atomid   t_enter t_exit  u_enter u_exit  duration type\n"
+	  "#------------------------------------------------------------\n");
 
   /* 
      main loop over frames 
@@ -517,7 +556,7 @@ int main(int argc,char *argv[])
 
     for(i=0; i<gnx; i++) {
       pore_crossing (x[gindex[i]], x_last[i], t, 
-		     &(influx[i]), &cavity, &result);
+		     &(influx[i]), &cavity, &result, fevents);
       copy_rvec(x[gindex[i]], x_last[i]);
     }
     update_result (&result);
@@ -552,8 +591,7 @@ int main(int argc,char *argv[])
   */
   quicksort (result.crossed, 0, result.ncr-1);
   sprintf(s_tmp, "%s_crossed", ggrpname);
-  fwrite_index(fncr, result.crossed, etxATOM,
-	      result.ncr, &top, s_tmp);
+  fwrite_index(fncr, result.crossed, result.ncr, &top, s_tmp);
 
   /* histogram of residency and crossing times */
   fres = ffopen (opt2fn("-res",  NFILE, fnm), "w");    
@@ -568,6 +606,7 @@ int main(int argc,char *argv[])
   fclose(out);
   fclose(fData);
   fclose(fCData);
+  fclose(fevents);
   fclose(fncr);
   fclose(fres);
 

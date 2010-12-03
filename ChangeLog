@@ -1,0 +1,46 @@
+2009-07-02  Oliver Beckstein  <oliver@acklam.bioch.ox.ac.uk>
+
+	* g_flux.c (Module): 
+	  - additional functionality in g_flux: event log that records
+            whenever a particle spent time in the cavity; includes both
+            successful transitions and sojourns.
+	  - FIXED: index of atoms that crossed had residue numbers and not
+	           atom numbers; thus it could not be used as a normal
+	           index file
+	  
+
+Previous changes:
+	
+g_count-gmx4.3
+
+        * Added back g_zcoord and removed cruft; otherwise like gmx4.2.
+
+
+g_count-gmx4.2
+
+        * alpha release (quick hack so that it works with Gromacs 4.x),
+          use at own risk and report bugs
+
+        * Can only count atoms, not molecules.
+
+        * g_flux should now count particles only inside the cylinder;
+          this did not work before but all options to this effect were
+          silently ignored. Tyically only matters for systems that are
+          not embedded in an impenetrable membrane.
+
+        * g_zcoord not supported; use the standard g_traj -nox -noy
+          -ox coord.xvg for the basic functionality.
+
+        * Changed numbering scheme to
+          "gmxGromacsMajorVersion.g_countVersion"; this should show
+          immediately which version of Gromacs is required for
+          compilation.
+
+g_count-0.3
+        * This is the version that is documented in the appendix.
+        * Note that g_flux silently ignores the -R radius option.
+
+Earlier versions of g_count are functionally identical to g_count-0.3
+but compile against earlier versions of Gromacs. See the README.
+
+

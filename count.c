@@ -1,4 +1,4 @@
-/* $Id: count.c,v 1.7 2009/06/15 15:49:57 oliver Exp $
+/* $Id: count.c,v 1.8 2009/07/02 16:05:48 oliver Exp $
    
    specialised functions which are used in in g_count and g_flux
 
@@ -197,7 +197,27 @@ void print_ldist (const rvec x, const t_cavity *cavity, const atom_id idx, const
 
 #define LNDXMX 15    /* entrie per line in an index file */
 
-void fwrite_index (FILE *fp, atom_id *list, enum ndxtype list_type,
+void fwrite_index (FILE *fp, atom_id *list, 
+		 int nmx, t_topology *top, char *grpname){
+  /* write an index group to file fp */
+  int i;
+
+  if (!fp) {
+    msg ("fwrite_index() in file %s, line %g: attempt to write without "
+	  "opening a file.\n", __FILE__, __LINE__);
+    return;
+  };
+
+  msg ("Writing index of all %d atoms that crossed the pore.\n", nmx);
+  for (i = 0; i < nmx; i++) {
+    /* ADD +1 when WRITING (external) index file !!! */
+    fprintf (fp, "%5u %s", list[i] + 1, NEWLINE(LNDXMX,i));
+  };
+  fprintf (fp, "\n\n");
+};
+
+
+void fwrite_index_deprecated(FILE *fp, atom_id *list, enum ndxtype list_type,
 		 int nmx, t_topology *top, char *grpname){
   /* write an index group to file fp. Interprete entries of list as
      MOLECULES (type == etxMOL or atoms (etxATOM) 

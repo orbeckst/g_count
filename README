@@ -1,4 +1,4 @@
-$Id: README,v 1.8 2009/06/24 12:45:58 oliver Exp $
+$Id: README,v 1.9 2009/07/02 15:15:12 oliver Exp $
 Additional programs for analysis of Gromacs output.
 Copyright (c) 2001-2009 Oliver Beckstein <oliver.beckstein@bioch.ox.ac.uk>
 
@@ -131,7 +131,7 @@ Problems, Questions
   molecules; the current code base can only handle atoms. Use water
   oxygens when analysing water.
 
-* Do I need the CVS version somewhere? Would it be better to
+* Do I need the [Gromacs] CVS version somewhere? Would it be better to
   reinstall gromacs 3.1.4 too?  
 
 > No, you don't need the sources to compile, only libraries and

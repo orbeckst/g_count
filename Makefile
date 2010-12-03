@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.41 2009/06/24 12:45:58 oliver Exp $
+# $Id: Makefile,v 1.44 2009/07/02 15:31:41 oliver Exp $
 #
 #
 # Makefile for the compilation of g_count and relatives
@@ -14,13 +14,13 @@
 #------------------------------------------------------------
 # Make sure that the following variables are correct for your setup
 # 
-GMX_TOP_DIR        := $(HOME)/Library/Gromacs/version/4.0.2
-#GMX_TOP_DIR         := /sansom/fedpacks/opt/gromacs/4.0.4
+#GMX_TOP_DIR        := $(HOME)/Library/Gromacs/version/4.0.2
+GMX_TOP_DIR         := /sansom/fedpacks/opt/gromacs/4.0.4
 #
 # EXEC depends on your machine/OS
 ARCH := $(shell ./config.guess)
-GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/$(ARCH)
-#GMX_EXEC_PREFIX := $(GMX_TOP_DIR)#
+#GMX_EXEC_PREFIX := $(GMX_TOP_DIR)/$(ARCH)
+GMX_EXEC_PREFIX := $(GMX_TOP_DIR)#
 GMX_LIB_DIR     := $(GMX_EXEC_PREFIX)/lib#
 GMX_INCLUDE_DIR := $(GMX_TOP_DIR)/include/gromacs#
 
@@ -33,7 +33,7 @@ BIN_DIR := $(GMX_EXEC_PREFIX)/bin
 
 # this is only necessary for the creation of etags
 # (for compilation it is not important)
-##GMX_SOURCE_DIR  := $(HOME)/Library/Gromacs/code/gromacs-4.0.2
+GMX_SOURCE_DIR  := $(HOME)/Library/Gromacs/code/gromacs-4.0.2
 
 
 CPPFLAGS += -I$(GMX_INCLUDE_DIR)
@@ -208,14 +208,20 @@ distclean: clean
 #                       minor are my releases
 NAME  := g_count
 MAJOR := gmx4
-MINOR := 3
+MINOR := 4
 
 TAR_NAME := $(NAME)-$(MAJOR).$(MINOR).tar.bz2
 TAR_DIR  := $(NAME)-$(MAJOR).$(MINOR)
 
+.phony: distribution upload
+
 distribution: $(TAR_NAME)
-$(TAR_NAME): $(ALL_SOURCES) Makefile README examples
+$(TAR_NAME): $(ALL_SOURCES) Makefile README ChangeLog examples
 	rm -rf $(TAR_DIR)
 	mkdir $(TAR_DIR)
 	cp -r $^ biop_contrib $(TAR_DIR)
 	tar --exclude=CVS --exclude=*~ -jcvf $@ $(TAR_DIR) && rm -rf $(TAR_DIR)
+
+UPLOAD_URI := /sansom/public_html/sbcb/oliver/download/Gromacs
+upload: $(TAR_NAME)
+	cp $< $(UPLOAD_URI) 

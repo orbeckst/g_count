@@ -1,4 +1,4 @@
-/* $Id: count.h,v 1.6 2009/06/15 15:49:57 oliver Exp $
+/* $Id: count.h,v 1.7 2009/07/02 16:05:48 oliver Exp $
    
    specialised functions which are used in in g_count and g_flux
 */
@@ -6,7 +6,7 @@
 #ifndef _count_h
 #define _count_h
 
-static char *SRCID_count_h = "$Id: count.h,v 1.6 2009/06/15 15:49:57 oliver Exp $";
+static char *SRCID_count_h = "$Id: count.h,v 1.7 2009/07/02 16:05:48 oliver Exp $";
 
 #include <assert.h>
 #include "typedefs.h"
@@ -76,7 +76,7 @@ extern real npbc2com (t_topology *, atom_id *, matrix, rvec *,
 extern int mols_from_index (atom_id *index, int gnx, t_block *mols, 
 		     atom_id *molndx, int max_mol);
 extern void print_ldist (const rvec x, const t_cavity *cavity, const atom_id idx, const real mass);
-extern void fwrite_index (FILE *, atom_id *, enum ndxtype,  int, t_topology *, char *);
+extern void fwrite_index (FILE *, atom_id *, int, t_topology *, char *);
 extern void dump_atomlist (FILE *, enum ndxtype, atom_id *, int, t_topology *);
 
 #endif   /* _count_h */

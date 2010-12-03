@@ -1,11 +1,11 @@
 /*
- * $Id: g_count.c,v 1.36 2009/06/08 16:42:06 oliver Exp $
+ * $Id: g_count.c,v 1.37 2009/07/02 15:15:12 oliver Exp $
  *
  * This program is based on a Gromacs 2.0 g_* program 
  * see http://www.gromacs.org
  *
  */
-static char *SRCID_g_count_c = "$Id: g_count.c,v 1.36 2009/06/08 16:42:06 oliver Exp $";
+static char *SRCID_g_count_c = "$Id: g_count.c,v 1.37 2009/07/02 15:15:12 oliver Exp $";
 
 #include <math.h>
 #include <string.h>
@@ -588,7 +588,7 @@ int main(int argc,char *argv[])
   */
   nmolecules = mols->nr; 
   snew (trckd[etxATOM], natoms);
-  snew (trckd[etxMOL],  nmolecules);  /* XXX: not used bhile -m not working ?!? */
+  snew (trckd[etxMOL],  nmolecules);  /* XXX: not used while -m not working ?!? */
   
   do {
     /* write time in ps */

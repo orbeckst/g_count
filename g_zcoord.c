@@ -2,7 +2,7 @@
  * \brief  outputs the z coordinates of atoms
  * \author Oliver Beckstein <oliver@bioch.ox.ac.uk>
  * \date   2002
- * $Id: g_zcoord.c,v 1.19 2009/06/24 12:45:58 oliver Exp $
+ * $Id: g_zcoord.c,v 1.20 2009/06/24 18:47:02 oliver Exp $
  */
 /*! \mainpage g_zcoord development documentation
   *
@@ -17,7 +17,7 @@
   * etc...
   */
 
-static char *SRCID_g_zoord_c = "$Id: g_zcoord.c,v 1.19 2009/06/24 12:45:58 oliver Exp $";
+static char *SRCID_g_zoord_c = "$Id: g_zcoord.c,v 1.20 2009/06/24 18:47:02 oliver Exp $";
 
 #include <math.h>
 #include <string.h>
