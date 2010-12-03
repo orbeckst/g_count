@@ -1,4 +1,4 @@
-$Id: README,v 1.7 2009/06/08 16:42:06 oliver Exp $
+$Id: README,v 1.8 2009/06/24 12:45:58 oliver Exp $
 Additional programs for analysis of Gromacs output.
 Copyright (c) 2001-2009 Oliver Beckstein <oliver.beckstein@bioch.ox.ac.uk>
 
@@ -40,14 +40,10 @@ coordinate axis.
 g_flux calculates fluxes by analyzing the trajectories of molecules
 passing through a cylinder.
 
-
-[g_zcoord IS CURRENTLY BROKEN AND DOES NOT COMPILE]
-
-g_zcoord simply writes out the z-coordinate of molecules in a
+g_zcoord simply writes out the z-coordinate of atoms in a
 cylindrical region or makes a xpm matrix for quick visualization. You
 may be able to do pretty much the same with g_traj and some
-post-processing.  
-
+post-processing.
 
 
 
@@ -130,8 +126,7 @@ or
 Problems, Questions
 ===================
 
-* Gromacs 4.x: g_zcoord has not been adapted for gromacs 4.x; use
-  g_traj.
+* Gromacs 4.x: 
   Versions of g_flux and g_count for 3.x were able to handle
   molecules; the current code base can only handle atoms. Use water
   oxygens when analysing water.
