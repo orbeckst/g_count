@@ -1,40 +1,25 @@
-$Id: README,v 1.10 2009/07/22 15:31:14 oliver Exp $
-Additional programs for analysis of Gromacs output.
-Copyright (c) 2001-2009 Oliver Beckstein <oliver.beckstein@bioch.ox.ac.uk>
+===========
+  README
+===========
+
+Analysis of permeation events: g_count and g_flux
+
+Copyright (c) 2001-2010 Oliver Beckstein <oliver.beckstein@bioch.ox.ac.uk>
+Published under the GNU Public Licence, version 2. See LICENCE.
 
 Contributors:
    Marc Baaden (xpm output in g_zcoord)
 
-g_count, g_flux and g_zcoord are released under the GNU Public
-License:
+The latest sources can be found in the git repository at
 
-These programs are free software; you can redistribute them and/or
-modify them under the terms of the GNU General Public License as
-published by the Free Software Foundation; either version 2 of the
-License, or (at your option) any later version.
+    https://github.com/orbeckst/g_count
 
-These programs are distributed in the hope that they will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
-or find it online at http://www.gnu.org/copyleft/gpl.html
+Please report bugs and feature requests through the Issue tracker
+https://github.com/orbeckst/g_count/issues
 
 
-
----------------------------------------------------------------
-  THIS VERSION OF g_count ONLY COMPILES AGAINST GROMACS 4.0.x
----------------------------------------------------------------
-
-(Specifically, it has been verified with 4.0.2; 4.0.4 appears to give
-wrong results for reasons that are still unclear. -- OB 2009-07-22)
-
-
-Short introduction
-==================
+Introduction
+============
 
 g_count simply counts the molecules within a cylinder aligned with a
 coordinate axis.
@@ -48,6 +33,17 @@ may be able to do pretty much the same with g_traj and some
 post-processing.
 
 
+Citing
+======
+
+When you use g_flux or g_count in published work please cite
+
+   O. Beckstein and M. S. P. Sansom, The influence of geometry,
+   surface character and flexibility on the permeation of ions and
+   water through biological pores, Phys. Biol. 1 (2004),
+   42--52. doi:10.1088/1478-3967/1/1/005
+
+Thank you!
 
 
 Required software
@@ -64,65 +60,17 @@ ball (eg g_count_0.1.tar.bz2) for Gromacs 3.2.1 (there are no substantial
 changes in the code itself) or g_count_0.1.tar.bz2 for Gromacs 3.3.3.
 
 
-
 Installation
 ============
 
-You've got two options to compile; the first one (a) is probably
-easier:
+See INSTALL.
 
-(a) compile the programs using the Makefile in our top directory; this
-    requires having installed diverse Gromacs 3.3.x libraries
+---------------------------------------------------------------
+  THIS VERSION OF g_count ONLY COMPILES AGAINST GROMACS 4.0.x
+---------------------------------------------------------------
 
-    - edit Makefile (perhaps different BINdir path for install,
-      location of the libgmx and libmd libraries and header files,
-      ...)
-
-    - compile the program(s)
-      $ make <PROG>
-
-    - install
-      $ make install
-    
-
-or
-
-(b) [THIS HAS NOT BEEN TESTED SINCE Gromacs 3.0]
-
-    put these files into a gromacs-3.0.x source tree in the src
-    directory. Then you can patch config.ac and automagikally (well,
-    automake does it, but never mind) a Makefile will appear in
-    biop_contrib which has 
-
-    * correct setup to compile with shared libraries and everything
-      similar to the standard g_* programs
-    * correct paths for installation
-    * X11 should work automatically if Gromacs was compiled with X11
-      support
-
-    The procedure is:
-    - move all source files into biop_contrib
-      $ mv *.[ch] biop_contrib
-   
-    - put the whole directory into TOPDIR/src
-
-    - patch TOPDIR/configure.ac in order to automatically rebuild Makefile.in:
-      $ cd TOPDIR
-      $ patch <src/biop_contrib/biop_contrib.patch
-
-    - build Makefile.in from Makefile.am
-      $ cd TOPDIR; automake
-      
-    - configure gromacs
-      $ cd TOPDIR; ./configure [lots_of_options]
-      or just run ./config.status if you've already configured it
-
-    - compile gromacs (if you haven't done so)
-      $ make
-      
-    - compile these programs with
-      $ cd src/biop_contrib; make <PROGRAM>
-
+(Specifically, it has been verified with 4.0.2; 4.0.4 appears to give
+wrong results for reasons that are still unclear. -- OB 2009-07-22)
 
 
 Problems, Questions
@@ -131,7 +79,7 @@ Problems, Questions
 * A water molecule is reported as crossing but in VMD I can see that
   this is not the case. What is going on?
 
-  There appears to be a subtke problem when linking gflux gmx4.4
+  There appears to be a subtle problem when linking gflux gmx4.4
   against Gromacs 4.0.4. It works for 4.0.2. Sorry, this is all that's
   known at the moment.
 

@@ -233,21 +233,21 @@ distclean: clean
 # new numbering scheme: major is Gromacs compatibility
 #                       minor are my releases
 NAME  := g_count
-MAJOR := gmx4
-MINOR := 5
+MAJOR := gmx4.0
+MINOR := 6
 
-TAR_NAME := $(NAME)-$(MAJOR).$(MINOR).tar.bz2
-TAR_DIR  := $(NAME)-$(MAJOR).$(MINOR)
+TAR_NAME := $(NAME)-$(MAJOR)-$(MINOR).tar.bz2
+TAR_DIR  := $(NAME)-$(MAJOR)-$(MINOR)
 
-.phony: distribution upload
+.phony: dist rsync
 
-distribution: $(TAR_NAME)
-$(TAR_NAME): $(ALL_SOURCES) Makefile README ChangeLog examples config.guess
+dist: $(TAR_NAME)
+$(TAR_NAME): $(ALL_SOURCES) Makefile README INSTALL LICENCE ChangeLog examples
 	rm -rf $(TAR_DIR)
 	mkdir $(TAR_DIR)
-	cp -r $^ biop_contrib $(TAR_DIR)
-	tar --exclude=CVS --exclude=*~ -jcvf $@ $(TAR_DIR) && rm -rf $(TAR_DIR)
+	cp -r $^ $(TAR_DIR)
+	tar --exclude=*~ -jcvf $@ $(TAR_DIR) && rm -rf $(TAR_DIR)
 
-UPLOAD_URI := /sansom/public_html/sbcb/oliver/download/Gromacs
-upload: $(TAR_NAME)
-	cp $< $(UPLOAD_URI) 
+UPLOAD_URI := clathrin:/sansom/public_html/html/sbcb/oliver/download/Gromacs
+rsync: $(TAR_NAME)
+	rsync -avP $< $(UPLOAD_URI) 

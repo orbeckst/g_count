@@ -1,0 +1,5 @@
+*.o
+g_count
+g_flux
+g_zcoord
+*.tar.bz2

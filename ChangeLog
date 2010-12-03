@@ -1,3 +1,13 @@
+2010-12-03  Oliver Beckstein  <oliver@loki.local>
+
+	* gmx4.0-6 release
+	* changed naming scheme slightly to indicate the major Gromacs
+	  release that the code is supposed to work for
+	* resolved name clash on newer Ubuntus (dprintf --> dbgprintf)
+	  (patch contributed by Jayne E Wallace)
+	* added INSTALL instructions and LICENCE
+	* added 'check' target to Makefile
+
 2009-07-02  Oliver Beckstein  <oliver@acklam.bioch.ox.ac.uk>
 
 	* g_flux.c (Module): 
