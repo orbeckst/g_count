@@ -1,52 +1,8 @@
-/* $Id: utilgmx.c,v 1.6 2009/01/19 16:19:45 oliver Exp $
+/* $Id: utilgmx.c,v 1.7 2009/06/15 15:49:57 oliver Exp $
    everyday functions
-   $Log: utilgmx.c,v $
-   Revision 1.6  2009/01/19 16:19:45  oliver
-   New version 0.3 for Gromacs 3.3.3 (breaks compilability with previous version)
-
-   Revision 1.5  2008/01/14 15:14:05  oliver
-   cleaned up and compiles with Gromacs 3.3.1; breaks backward compatibility with Gromacs 3.2.1
-
-   Revision 1.4  2002/08/13 17:36:05  oliver
-   * new program: g_ri3Dc
-     . count molecules in grid cells
-     . effective radius pore profile
-     . volume calculation
-     . xy and xz density projections (xfarbe format)
-     No 3D grid output yet (lacking a suitable format)
-   * changed DR_DEFAULT to new value
-   * smaller changes of comments
-
-   Revision 1.2.2.2  2002/08/11 19:35:23  oliver
-   grid allocation functions for real variables in  2D and 3D
-   (from Numerical Recipes & simplified + use snew())
-
-   Revision 1.2.2.1  2002/05/29 18:43:23  oliver
-   * g_flux writes index of all mols/atoms that crossed the pore
-   * new function list_add_atomid (const atom_id, int *, atom_id *) in utilgmx.c:
-     add an atom_id to list if its not allready in there. Sort list later with
-     quicksort(list, 0, last)
-   * write_index() in count.c: clean up of do_tracking() from g_count.c;
-     writes the contents of list into an index (either as residue numbers
-     ('molecules') or atom ids
-   In g_flux:
-   * store net flux in t_flux
-   * new: update_result(); updates t_result from internal values
-   * added the list of particles that crossed to t_result
-   * inline a few functions
-   * HIDE -dR option
-   * prune unused variables
-   * only allocate for gnx atoms (not natoms)
-
-   Revision 1.2  2001/02/19 14:26:22  oliver
-   moved dt_tpx to utilgmx
-
-   Revision 1.1  2001/02/18 16:38:13  oliver
-   Initial revision
-
 */
 
-static char *SRCID_utilgmx_c = "$Id: utilgmx.c,v 1.6 2009/01/19 16:19:45 oliver Exp $";
+static char *SRCID_utilgmx_c = "$Id: utilgmx.c,v 1.7 2009/06/15 15:49:57 oliver Exp $";
 
 #include "utilgmx.h"
 #include "gmx_fatal.h"
@@ -207,7 +163,7 @@ void dfprintf (const char *format, ...)
 };
 
 
-real ldist (rvec x, rvec p, rvec c) {
+real ldist (const rvec x, const rvec p, const rvec c) {
   /* calculate the (perpendicular) distance of point x from the line
      through c pointing along p 
   */
