@@ -10,8 +10,12 @@ static char *SRCID_utilgmx_h = "$Id: utilgmx.h,v 1.8 2009/07/22 15:31:14 oliver 
 #include "vec.h"
 #include "tpxio.h"
 
+#ifndef PI
 #define PI 3.14159265358979323844
+#endif
+#ifndef AMU
 #define AMU 1.66054e-27                 /* 1u = AMU kg */
+#endif
 #define AvogadroConstant 6.02214e+23    /* mol^-1 */
 
 #define aswap(v,i,j) {  \
