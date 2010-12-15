@@ -363,7 +363,10 @@ int main(int argc,char *argv[])
     "Despite appearance it only makes sense to specify a pore axis "
     "approximately parallel to the z-axis because we only really base "
     "the definition of the boundaries on z coordinates",
-    "The event log is a quick hack --- check results for consistency (e.g. times etc)."
+    "The event log is a quick hack --- check results for consistency (e.g. times etc).",
+    "The trajectory should be centered on the pore because the definition "
+    "of boundaries (via z1 and z2) is static; arguably, this should also be "
+    "done with a selection of atoms!!"
   };
 
   static t_cavity   cavity = {   /* define volume to count mols in */
@@ -505,9 +508,16 @@ int main(int argc,char *argv[])
   natoms = read_first_x(&status,ftp2fn(efTRX,NFILE,fnm),&t,&x,box);
   snew(x_s,natoms);
 
-  /* look at cavity 
-     set defaults from the simulation box size
+  /* setting up cavity 
+     1. setting the z boundaries to the box dimensions does not make
+        sense because in this way we cannot distinguish between
+	inside and outside
   */
+  if (cavity.z1 == -1 && cavity.z2 == -1)
+    gmx_fatal(FARGS, "Set at least one of -z1 and -z2 --- otherwise no transitions will be counted.");
+
+  /* 
+     2. set defaults from the simulation box size */
   msg("\n");
   autoset_cavity(&cavity,box,NPA,pa);
   cavity.vol = sqr(cavity.radius - dR) * PI * (cavity.z2 - cavity.z1);
