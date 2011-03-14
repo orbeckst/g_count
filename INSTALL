@@ -1,5 +1,5 @@
 Counting permeation events: g_count and g_flux
-Copyright (C) 2001-2010 Oliver Beckstein <orbeckst@gmail.com>
+Copyright (C) 2001-2011 Oliver Beckstein <orbeckst@gmail.com>
 Released under the GNU Public License (see README)
 
 
@@ -12,9 +12,9 @@ for different versions of Gromacs.
 
 The gridcount  version that comes with this file is for stable
 
-    Gromacs 4.0.x
+    Gromacs 4.5.x
 
-releases.
+releases (specifically, 4.5.3 was tested).
 
 Other version of gridcount can be found on the website (see README).
 

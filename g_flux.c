@@ -106,15 +106,15 @@ typedef struct {
 } t_result;
 
 typedef struct {
-  bool record_events;      /* are we writing the event log? */
-  bool record_sojourns;    /* also sojourns to log (makes it HUGE) */
+  gmx_bool record_events;      /* are we writing the event log? */
+  gmx_bool record_sojourns;    /* also sojourns to log (makes it HUGE) */
   FILE *fevents;           /* file handle for event log */
 } t_eventlog;
 
 void init_t_result (t_result *, int);
 void init_t_flux   (t_flux *);
 int update_result (t_result *);
-static inline bool bCrossing(const rvec, const rvec, const t_cavity *);
+static inline gmx_bool bCrossing(const rvec, const rvec, const t_cavity *);
 static inline int  typeCrossing (const rvec, const t_cavity *);
 real pore_crossing (const rvec, const rvec, const real, 
 		    t_crossing *, t_cavity *, t_result *, t_eventlog *);
@@ -174,7 +174,7 @@ int update_result (t_result *result) {
 
 
 
-static inline bool bCrossing(const rvec x, const rvec x_last, 
+static inline gmx_bool bCrossing(const rvec x, const rvec x_last, 
 				 const t_cavity *cavity) {
   real zmin, zmax;
   /* particle crossed a boundary 1 or 2  if
@@ -315,7 +315,7 @@ real pore_crossing (const rvec x, const rvec x_last, const real t,
 
 int main(int argc,char *argv[])
 {
-  static char *desc[] = {
+  const char *desc[] = {
     "[TT]g_flux[TT] calculates the flux of atoms through "
     "a  cylindrical region as a function of time. It takes an index file "
     "with atomnumbers and generates an output file with the "
@@ -359,7 +359,7 @@ int main(int argc,char *argv[])
     "and run [TT]g_flux[TT] on it."
   };
 
-  static char *bugs[] = { 
+  const char *bugs[] = { 
     "Despite appearance it only makes sense to specify a pore axis "
     "approximately parallel to the z-axis because we only really base "
     "the definition of the boundaries on z coordinates",
@@ -369,7 +369,7 @@ int main(int argc,char *argv[])
     "done with a selection of atoms!!"
   };
 
-  static t_cavity   cavity = {   /* define volume to count mols in */
+  t_cavity   cavity = {   /* define volume to count mols in */
     {0, 0, 1},            /* axis     */
     {0, 0, 0},            /* cpoint   */
     -1,                   /* radius   */
@@ -377,9 +377,9 @@ int main(int argc,char *argv[])
     -1,
     0                    /* volume - calculate later */
   };
-  static real dR = DR_DEFAULT;   /* effective radius R* = R - dR [PERSONAL DEFAULT] but not really needed */
-  static int  ngroups = 1;  /* not used >1 */
-  static t_eventlog  eventlog = {
+  real dR = DR_DEFAULT;   /* effective radius R* = R - dR [PERSONAL DEFAULT] but not really needed */
+  int  ngroups = 1;  /* not used >1 */
+  t_eventlog  eventlog = {
     FALSE,       /* create event log ? */
     FALSE,       /* record sojourns -- enabling gives HUGE files */
     NULL         /* file handle to log file */
@@ -414,7 +414,7 @@ int main(int argc,char *argv[])
     { efDAT, "-res", "residency", ffWRITE },
     { efDAT, "-events", "events", ffOPTWR },    
   };
-
+  output_env_t oenv;
   FILE       *out;           /* xmgr file with raw numbers */
   FILE       *fData;         /* current  flux    */
   FILE       *fCData;        /* accumulated flux */
@@ -425,7 +425,7 @@ int main(int argc,char *argv[])
   int        ePBC;
   char       title[STRLEN];
   rvec       *xtop;
-  bool       bTop;
+  gmx_bool   bTop;
   rvec       *x,*x_s;        /* coord, with and without pbc*/
   rvec       *x_last;        /* coord of last frame with pbc for
                                 molecules (COM) or atoms */
@@ -434,7 +434,7 @@ int main(int argc,char *argv[])
   real       t;              /* time  */
   t_simtime  stime;          /* important times in th simulation */
   int        natoms;         /* number of atoms in system  */
-  int        status;
+  t_trxstatus *status;
   int        i;              /* loopcounters                 */
   int        tot_frames = 0; /* t_tot = tot_frames * delta_t */
   t_crossing *influx;        /* array recording all enter events 
@@ -444,7 +444,7 @@ int main(int argc,char *argv[])
 
   char       s_tmp[STRLEN];  /* string for use with sprintf() */
   /* from gmx_traj.c */
-  char       *indexfn;
+  const char *indexfn;
   char       **grpname;
   int        *isize0,*isize;
   atom_id    **index0,**index;
@@ -460,7 +460,8 @@ int main(int argc,char *argv[])
   CopyRight(stderr,argv[0]);
 
   parse_common_args(&argc,argv,PCA_CAN_TIME | PCA_CAN_VIEW,
-		    NFILE,fnm,asize(pa),pa,asize(desc),desc,asize(bugs),bugs);
+		    NFILE,fnm,asize(pa),pa,asize(desc),desc,asize(bugs),bugs,
+		    &oenv);
 
   if (bDebugMode()) {
     dfprintf ("%s -- debugging...\n\n", Program());
@@ -505,7 +506,7 @@ int main(int argc,char *argv[])
     influx[i].u  = 0;
   };
 
-  natoms = read_first_x(&status,ftp2fn(efTRX,NFILE,fnm),&t,&x,box);
+  natoms = read_first_x(oenv,&status,ftp2fn(efTRX,NFILE,fnm),&t,&x,box);
   snew(x_s,natoms);
 
   /* setting up cavity 
@@ -547,7 +548,7 @@ int main(int argc,char *argv[])
   };
 
   /* ... and advance */
-  if (! read_next_x(status,&t,natoms,x,box)) {
+  if (! read_next_x(oenv,status,&t,natoms,x,box)) {
     msg ("Only one frame in trajectory.\nGAME OVER!\n");
     /* clean up a bit */
     fprintf(stderr,"\n");
@@ -611,7 +612,8 @@ int main(int argc,char *argv[])
     };
 
     /* tot_frames++; */
-  } while(read_next_x(status,&t,natoms,x,box));
+  } while(read_next_x(oenv,status,&t,natoms,x,box));
+  close_trj(status);
 
   /* post production 
      ---------------
@@ -630,7 +632,6 @@ int main(int argc,char *argv[])
 
   /* clean up a bit */
   fprintf(stderr,"\n");
-  close_trj(status);
   fclose(out);
   fclose(fData);
   fclose(fCData);

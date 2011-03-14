@@ -5,7 +5,6 @@
  * http://www.fhi-berlin.mpg.de/grz/pub/xfarbe/xfarbe-2.6/html/index.html 
  * for details about xfarbe and the file format
  */
-static char *SRCID_xf_c = "$Id: xf.c,v 1.2 2004/03/18 01:04:28 oliver Exp $";
 
 #include <string.h>
 #include <ctype.h>
@@ -20,7 +19,7 @@ static char *SRCID_xf_c = "$Id: xf.c,v 1.2 2004/03/18 01:04:28 oliver Exp $";
 
 
 /* minimum parameter file; colours are defined in xf.h */
-bool xf_write_XFarbe (int ncolours) {
+gmx_bool xf_write_XFarbe (int ncolours) {
   FILE *XFarbe;
   int i;
   
@@ -104,8 +103,8 @@ void xf_append_axes_annotation (FILE *fData, real x1, real x2,
 /* create xmgr file with subtitle
    (xvgropen() does not have subtitles)
 */
-FILE *xmgropen(char *fn,char *title,char *subtitle,
-	       char *xaxis,char *yaxis)
+FILE *xmgropen(const char *fn,const char *title,const char *subtitle,
+	       const char *xaxis,const char *yaxis)
 {
   FILE *xmgr;
   time_t t;

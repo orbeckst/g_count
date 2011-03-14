@@ -3,8 +3,6 @@
 #ifndef _utilgmx_h
 #define _utilgmx_h
 
-static char *SRCID_utilgmx_h = "$Id: utilgmx.h,v 1.8 2009/07/22 15:31:14 oliver Exp $";
-
 #include <stdarg.h>
 #include "typedefs.h"
 #include "vec.h"
@@ -42,7 +40,7 @@ extern void dbgprintf (const char *format, ...);
 extern void dfprintf (const char *format, ...);
 extern void quicksort (atom_id v[], int left, int right);
 extern real ldist (const rvec x, const rvec p, const rvec c);
-extern real dt_tpx (char *fn);
+extern real dt_tpx (const char *fn);
 extern int  list_add_atomid (const atom_id, int *, atom_id *);
 
 static inline void new_rvec (rvec r, real x, real y, real z)

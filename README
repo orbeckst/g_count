@@ -4,7 +4,7 @@
 
 Analysis of permeation events: g_count and g_flux
 
-Copyright (c) 2001-2010 Oliver Beckstein <oliver.beckstein@bioch.ox.ac.uk>
+Copyright (c) 2001-2011 Oliver Beckstein <oliver.beckstein@bioch.ox.ac.uk>
 Published under the GNU Public Licence, version 2. See LICENCE.
 
 Contributors:
@@ -49,15 +49,14 @@ Thank you!
 Required software
 =================
 
-You must have a compiled version of Gromacs 4.0.2 (or probably later)
+You must have a compiled version of Gromacs 4.5.3 (or probably later)
 with all libraries and include files, and the appropriate
 C-compiler. If you compiled Gromacs with X11 support see the end of
 this README if you have problems.
 
-Note that this software now requires at least Gromacs 4.0.x to
-compile. This version is NOT backwards compatible. Use an older tar
-ball (eg g_count_0.1.tar.bz2) for Gromacs 3.2.1 (there are no substantial
-changes in the code itself) or g_count_0.1.tar.bz2 for Gromacs 3.3.3.
+Note that this software now requires at least Gromacs 4.5.3 to
+compile. This version is NOT backwards compatible (although 4.5.x
+might work). Use an older tar ball for previous versions of Gromacs.
 
 
 Installation
@@ -66,11 +65,10 @@ Installation
 See INSTALL.
 
 ---------------------------------------------------------------
-  THIS VERSION OF g_count ONLY COMPILES AGAINST GROMACS 4.0.x
+  THIS VERSION OF g_count ONLY COMPILES AGAINST GROMACS 4.5.x
 ---------------------------------------------------------------
 
-(Specifically, it has been verified with 4.0.2; 4.0.4 appears to give
-wrong results for reasons that are still unclear. -- OB 2009-07-22)
+(Specifically, it has been verified with 4.5.3.)
 
 
 Problems, Questions
@@ -91,44 +89,44 @@ Problems, Questions
 * Do I need the [Gromacs] CVS version somewhere? Would it be better to
   reinstall gromacs 3.1.4 too?  
 
-> No, you don't need the sources to compile, only libraries and
-> include files.
-> Just make sure that you point GMX_LIB_DIR to the directory where the
-> libmd.a (or libmd.so) and libgmx.a (or .so) files are. The
-> GMX_INCLUDE_DIR must point to the directory with the *.h files.
+  > No, you don't need the sources to compile, only libraries and
+  > include files.
+  > Just make sure that you point GMX_LIB_DIR to the directory where the
+  > libmd.a (or libmd.so) and libgmx.a (or .so) files are. The
+  > GMX_INCLUDE_DIR must point to the directory with the *.h files.
 
 
 
 * Missing X libraries, indicated by errors similar to the following:
 
->> gcc -o g_count g_count.o utilgmx.o xmgr.o count.o -lm
->> -L/usr/local/gromacs/i686-pc-linux-gnu/lib -lmd -lgmx
->> /usr/local/gromacs/i686-pc-linux-gnu/lib/libgmx.a(mgmx.o): In function
->> `gmx_gui':
->> mgmx.o(.text+0x29): undefined reference to
->> `applicationShellWidgetClass'
->> mgmx.o(.text+0x4c): undefined reference to `XtOpenApplication'
->> mgmx.o(.text+0x7c): undefined reference to `XtRealizeWidget'
->> /usr/local/gromacs/i686-pc-linux-gnu/lib/libgmx.a(mgmx.o): In function
->> `mk_gui':
->> mgmx.o(.text+0x1d5): undefined reference to `_XmStrings'
->> mgmx.o(.text+0x1f6): undefined reference to
->> `XmCreateFileSelectionDialog'
-[...]
+  >> gcc -o g_count g_count.o utilgmx.o xmgr.o count.o -lm
+  >> -L/usr/local/gromacs/i686-pc-linux-gnu/lib -lmd -lgmx
+  >> /usr/local/gromacs/i686-pc-linux-gnu/lib/libgmx.a(mgmx.o): In function
+  >> `gmx_gui':
+  >> mgmx.o(.text+0x29): undefined reference to
+  >> `applicationShellWidgetClass'
+  >> mgmx.o(.text+0x4c): undefined reference to `XtOpenApplication'
+  >> mgmx.o(.text+0x7c): undefined reference to `XtRealizeWidget'
+  >> /usr/local/gromacs/i686-pc-linux-gnu/lib/libgmx.a(mgmx.o): In function
+  >> `mk_gui':
+  >> mgmx.o(.text+0x1d5): undefined reference to `_XmStrings'
+  >> mgmx.o(.text+0x1f6): undefined reference to
+  >> `XmCreateFileSelectionDialog'
+  [...]
 
->  However, the errors you get look to me as if your gromacs libraries are
-> also linked against X-Windows/Motif. I tend to switch it off on
-> compilation, something --without-x (X is more hassle than help and ngmx
-> doesn't get used anymore since vmd...).
->
-> You might have to add the include path for X includes to CPPFLAGS, eg
-> (no idea if it works)
->
-> CPPFLAGS += -I/usr/X11R6/include
->
-> and X libs to LDFLAGS
->
-> LDFLAGS += -L/usr/X11R6/lib -lX11 -lXm -lXaw -lXpm
+  >  However, the errors you get look to me as if your gromacs libraries are
+  > also linked against X-Windows/Motif. I tend to switch it off on
+  > compilation, something --without-x (X is more hassle than help and ngmx
+  > doesn't get used anymore since vmd...).
+  >
+  > You might have to add the include path for X includes to CPPFLAGS, eg
+  > (no idea if it works)
+  >
+  > CPPFLAGS += -I/usr/X11R6/include
+  >
+  > and X libs to LDFLAGS
+  >
+  > LDFLAGS += -L/usr/X11R6/lib -lX11 -lXm -lXaw -lXpm
 
 * If compilation fails and error messages mention 'fatal.h' then you
   are compiling against the wrong version of Gromacs. Please see the

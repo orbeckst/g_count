@@ -6,8 +6,6 @@
 #ifndef _count_h
 #define _count_h
 
-static char *SRCID_count_h = "$Id: count.h,v 1.7 2009/07/02 16:05:48 oliver Exp $";
-
 #include <assert.h>
 #include "typedefs.h"
 #include "names.h"
@@ -67,8 +65,8 @@ typedef struct {      /* times in the simulation */
 } t_simtime;
 
 
-extern bool autoset_cavity (t_cavity *,matrix,int,t_pargs []);
-extern bool bInCavity (const rvec x, const t_cavity *cavity);
+extern gmx_bool autoset_cavity (t_cavity *,matrix,int,t_pargs []);
+extern gmx_bool bInCavity (const rvec x, const t_cavity *cavity);
 extern void x2molxcm (t_topology *top, int ePBC, atom_id *molndx, int gnmol, matrix box, 
 		      rvec *x, rvec *x_s, rvec *xmol_cm);
 extern real npbc2com (t_topology *, atom_id *, matrix, rvec *, 

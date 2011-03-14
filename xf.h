@@ -9,8 +9,6 @@
 #ifndef _xf_h
 #define _xf_h
 
-static char *SRCID_xf_h = "$Id: xf.h,v 1.2 2004/03/18 01:04:28 oliver Exp $";
-
 #ifdef CPLUSPLUS
 extern "C" {
 #endif
@@ -18,7 +16,7 @@ extern "C" {
 /***************************************************
  *            xfarbe routines (2D density plots)
  ***************************************************/
-extern bool xf_write_XFarbe (int);
+extern gmx_bool xf_write_XFarbe (int);
 /* write a parameter file with 16 colours from xfrabe_colours */
 extern FILE *xf_header (const char *,const char *,const int,const int);
 /* write open file, write heading and dimensions X and Y; returns file
@@ -73,8 +71,8 @@ static u_int xfarbe_colours[] =
  * xmgrace routine 
  * replacement for xvgropen()
  */
-extern FILE *xmgropen(char *fn,char *title,char *subtitle,
-                      char *xaxis,char *yaxis);
+extern FILE *xmgropen(const char *fn,const char *title,const char *subtitle,
+                      const char *xaxis,const char *yaxis);
 /* Open a file, and write a title, subtitle, and axis-labels in Xmgr format */
 
 

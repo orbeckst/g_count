@@ -233,8 +233,8 @@ distclean: clean
 # new numbering scheme: major is Gromacs compatibility
 #                       minor are my releases
 NAME  := g_count
-MAJOR := gmx4.0
-MINOR := 6
+MAJOR := gmx4.5
+MINOR := 7
 
 TAR_NAME := $(NAME)-$(MAJOR)-$(MINOR).tar.bz2
 TAR_DIR  := $(NAME)-$(MAJOR)-$(MINOR)
