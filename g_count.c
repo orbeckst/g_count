@@ -28,21 +28,22 @@
 #include "utilgmx.h"
 #include "count.h"
 
+/* tau = minimum time spent in cavity to be tracked, assumed to be ps */
 #define TAU_DEFAULT   10
+/* empirical radius adjustment for cylindrical volume calculation */
 #define DR_DEFAULT    0.030
 
+/* "times" are in frames */
 typedef struct {      /* record all atoms that spend time in the cavity */
   atom_id   id;       /* number of molecule or atom */
-  real      time;     /* time spent so far (measured in (int) frames) */
-  real      t_last;   /* last time the particle was seen in the cavity */
-  int       crosses;  /* number of enter and exit events */
+  int       time;     /* time spent so far (measured in (int) frames) */
 } t_atmcav;
 
 
 
 int track_ndx(atom_id atom, 
 	       t_atmcav *tracked, int natoms);
-gmx_bool bTracked(t_atmcav *t, real t_tot, real tau);
+gmx_bool bTracked(t_atmcav *t, int tau_frames);
 void do_tracking(FILE *fTrack, FILE *fTDat, t_atmcav *trckd, 
 		 t_simtime *t, t_topology *top, char *grpname);
 void dump_a_cav(FILE *fp, t_atmcav *trckd, 
@@ -56,7 +57,6 @@ void do_tracking(FILE *fTrack, FILE *fTDat, t_atmcav *trckd,
   t_atmcav *tr;
 
   int i, j;          /* loop */
-  int moleculesize; 
   int ncav;          /* number of molecules ever in the cavity */
   int ntrck;         /* number of mol/atoms tracked (ie t > tau) */
 
@@ -73,50 +73,46 @@ void do_tracking(FILE *fTrack, FILE *fTDat, t_atmcav *trckd,
 
   msg ("Writing index of all %d atoms in the cavity.\n", ncav);
 
-  /* translation atom_id --> resnr  
-     
-     resinfo[atoms[iatom].resind]->name
+  /* needed for translation mols -> atom ids */
+  mols  = &(top->mols);
+  atndx = mols->index;
 
+  /* translation atom_id --> resnr: 
+     resinfo[atoms[iatom].resind].nr
    */
   atoms = top->atoms.atom;
   resinfo = top->atoms.resinfo;
   
-  /*    quicksort (trckd, 0, ncav-1); */
+  // quicksort (trckd, 0, ncav-1);
+
   /* ids to new index file */
   fprintf (fTrack, "[ %s_tracked ]\n", grpname);
 
   for (i = 0; i < ncav; i++) {
-    atom_id igmx;
-
     tr = &(trckd[i]);
-    igmx = tr->id;
-
-    if (bTracked(tr, t->tot_frames, t->tau)) {
+    if (bTracked(tr, t->tau_frames)) {
       ntrck++;
       /* ADD +1 when WRITING (external) index file !!! */
-      fprintf(fTrack, "%5u %s", resinfo[atoms[atndx[tr->id]].resind].nr, 
+      fprintf(fTrack, "%5u %s", tr->id + 1, 
 	      (ntrck % 15 == 0) ? "\n" : "");
-    };
+    }
+  }
+  fprintf (fTrack, "\n\n");
 
-    fprintf (fTrack, "\n\n");
+  /* simply dump all entries (same as tau=0) */
+  fprintf (fTrack, "[ %s_cavity ]\n", grpname);
+  for (i = 0; i < ncav; i++) {
+    tr = &(trckd[i]);
+    /* ADD +1 when WRITING (external) index file !!! */
+    fprintf (fTrack, "%5u %s", tr->id + 1, 
+	     ((i+1) % 15 == 0) ? "\n" : "");
+  }
+  fprintf (fTrack, "\n\n");
 
-
-    /* simply dump all entries (same as tau=0) */
-    fprintf (fTrack, "[ %s_cavity ]\n", grpname);
-    for (i = 0; i < ncav; i++) {
-      tr = &(trckd[i]);
-      /* ADD +1 when WRITING (external) index file !!! */
-      fprintf (fTrack, "%5u %s", tr->id + 1, 
-	       ((i+1) % 15 == 0) ? "\n" : "");
-    };
-    fprintf (fTrack, "\n\n");
-
-    msg ("Number of atoms tracked (tau=%g): %d (%5.2f%% of all atoms "
-	 "in the cavity)\n", 
-	 t->tau,
-	 ntrck, (real) 100*ntrck/ncav);
-  };
-
+  msg ("Number of atoms tracked (tau=%g): %d (%5.2f%% of all atoms "
+       "in the cavity)\n", 
+       t->tau,
+       ntrck, (real) 100*ntrck/ncav);
 
   if (bDebugMode()) {
     fprintf (debug, "\n# Threshold for counting: tau = %g\n", t->tau);
@@ -168,8 +164,8 @@ void dump_a_cav (FILE *fp, t_atmcav *trckd,
   /* needed for translation mols -> atom ids */
   mols  = &(top->mols);
   atndx = mols->index;
-  /* translation atom_id -> resnr 
-     top->atoms->atom[atom_id]->resnr
+  /* translation atom_id --> resnr 
+     resinfo[atoms[iatom].resind].nr
   */
   atoms = top->atoms.atom;
   resinfo = top->atoms.resinfo;
@@ -187,7 +183,7 @@ void dump_a_cav (FILE *fp, t_atmcav *trckd,
 	     resinfo[atoms[igmx].resind].nr + 1,
 	     *(top->atoms.atomname[igmx]),
 	     tr->time * t->delta_t,
-	     tr->time / t->tot_frames);
+	     (real)tr->time / t->tot_frames);
     } else {
     fprintf (debug, "  %8u %6u %6u %6s %12.1f %13.6f %s\n",
 	     tr->id + 1,
@@ -195,8 +191,8 @@ void dump_a_cav (FILE *fp, t_atmcav *trckd,
 	     resinfo[atoms[igmx].resind].nr + 1,
 	     *(top->atoms.atomname[igmx]),
 	     tr->time * t->delta_t,
-	     tr->time / t->tot_frames,
-	     bTracked (tr, t->tot_frames, t->tau) ?  "#TRACKED#" : "");
+	     (real)tr->time / t->tot_frames,
+	     bTracked (tr, t->tau_frames) ?  "#TRACKED#" : "");
     };
   };
   return;
@@ -240,8 +236,8 @@ int track_ndx (atom_id atom,
 };
 
 
-gmx_bool bTracked (t_atmcav *t, real t_tot, real tau) {
-  return t->time > tau;
+gmx_bool bTracked (t_atmcav *atm, int tau_frames) {
+  return atm->time > tau_frames;
 };
 
 
@@ -250,10 +246,7 @@ int main(int argc,char *argv[])
   const char *desc[] = {
     "[TT]g_countx[TT] counts the numbers of molecules within a cylindrical ",
     "region as a function of time. It takes an index file with ",
-    "atomnumbers and ",
-    "chooses the molecules that these atoms belong to ",
-    "(or optionally (with [TT]-nom[TT]) it simply takes all atoms in the ",
-    "index) and generates an output file with the number of molecules/atoms "
+    "atomnumbers and generates an output file with the number of atoms "
     "which are present in the cavity a each time frame.\n",
     "The data file contains\n",
     "        t(ps) number concentration(mol/l) [density(g/cm^3)][PAR]",
@@ -271,10 +264,8 @@ int main(int argc,char *argv[])
     "The -track index file contains the atom_ids  of all atoms that",
     "were at least for tau ps in the cavity (entry [ *_tracked ]). ",
     "The entry [ *_cavity ] contains all atoms that were for at ",
-    "least one time frame in the cavity.",
-    "Entries containing molecule numbers are titled ",
-    "[ *_molecules ].[PAR]"
-    "[TT]-tdat[TT] writes a data file containing all atoms or molecules in "
+    "least one time frame in the cavity.[PAR]",
+    "[TT]-tdat[TT] writes a data file containing all atoms in "
     "the cavity and their total residency time. Format:\n",
     "         atom_nr  molecule_nr  name   total_time (ps)  T_sim/total_time"
     "[PAR]",
@@ -292,16 +283,15 @@ int main(int argc,char *argv[])
   };
 
   const char *bugs[] = { 
-    "NOT WORKING: -m behaves differently from the standard usage "
-    "within the g_* programs -- it figures out _for itself_ what the "
-    "molecules are and does not need MOLECULE numbers but ATOM_IDs.",
-    "-nom is the DEFAULT behaviour, i.e. you should only supply water  oxygens for water. "
+    "Counting molecules (hidden option -m) does not work; it used to work "
+    "in older versions of g_count (pre-Gromacs 4.0)",
+    "You should only supply water oxygens for water. "
     "However, this means that the mass-density is wrong because hydrogens are not taken into account "
     "so you should either just use concentrations/number densities or correct the mass yourself.",
-    "When counting ions you MUST use -nom !",
-    "The density is calculated as (total mass in cavity)/((R-r_water)^2*pi*(z2-z1)) -- "
-    "so it makes only sense if this approximates the true cavity volume.",
-    "The DEFAULT volume/radius correction is specific for methane pseudo "
+    "The density is calculated as (total mass in cavity)/((R*-r_water)^2*pi*(z2-z1)) -- "
+    "so it makes only sense if this approximates the true cavity volume. "
+    "R* = R - dR, where dR is the volume/radius correction.",
+    "The DEFAULT volume/radius correction dR is specific for methane pseudo "
     "atoms (ffgmx, ffG43a1) and SPC water.",
     "The program is only tested with pore axis parallel to z-axis (0,0,1).",
   };
@@ -378,13 +368,11 @@ int main(int argc,char *argv[])
   int        nmol;           /* number of molecules within the cavity */
   real       conc, dens;     /* concentration and mass density in cavity */
   int        tndx;           /* index in cav_id[][] */
-  t_atmcav   *trckd;         /* all data about mols/atoms in the cavity */
-  enum ndxtype type;         /* type of index (interpreted as atom or mol) */
-
+  t_atmcav   *trckd;         /* all data about atoms in the cavity */
   char       s_tmp[STRLEN];  /* string for use with sprintf() */
   char       s_title[STRLEN];/* and another one... */  
   /* from gmx_traj.c */
-  const char *indexfn;
+  const char *indexfn = NULL;
   char       **grpname;
   int        *isize0,*isize;
   atom_id    **index0,**index;
@@ -395,12 +383,8 @@ int main(int argc,char *argv[])
   int        gnx = 0;        /* number of atoms in FIRST group*/
   atom_id    *gindex = NULL; /* index of FIRST group */
   int        gnmol = 0;      /* XXX number of molecules in group */
-  int        moleculesize;   /* XXX size of molecule in numbers*/
   atom_id    *molndx = NULL; /* XXX index of mols in atndx */
   t_atom     *atoms;         /* XXX replaces 'a' ???? */
-  //atom_id    *index;         /* atom numbers in index file  */
-  //atom_id    *a, *atndx;     /* indices from block.        */
-  //t_block *mols;             /* all molecules in system    */
 
 #define NFILE asize(fnm)
 #define NPA   asize(pa)
@@ -427,7 +411,6 @@ int main(int argc,char *argv[])
 
   if (bMolecular) {
     gmx_fatal(FARGS, "Sorry, -m option not working at the moment");
-    indexfn = ftp2fn(efNDX,NFILE,fnm);
   }
   else {
     indexfn = ftp2fn_null(efNDX,NFILE,fnm);
@@ -455,11 +438,6 @@ int main(int argc,char *argv[])
   mols = &(top.mols);
   atndx = mols->index;
   
-  /* step size in ps from tpx file 
-  dt = dt_tpx (ftp2fn_null(efTPS,NFILE,fnm));
-  dmsg ("Read from the topology: stepsize delta_t = %3g ps\n", dt);
-  */
-
   natoms = read_first_x(oenv,&status,ftp2fn(efTRX,NFILE,fnm),&t,&x,box);
   snew(x_s,natoms);
 
@@ -525,7 +503,7 @@ int main(int argc,char *argv[])
 
     /* count atoms */
     for(i=0; i<gnx; i++) {
-      if ( bInCavity(x[gindex[i]], &cavity) ) {
+      if (bInCavity(x[gindex[i]], &cavity)) {
 	nmol++;
 	totalmass += atoms[gindex[i]].m;
 	tndx = track_ndx(gindex[i],trckd,natoms);
@@ -553,11 +531,12 @@ int main(int argc,char *argv[])
   stime.tot_frames = tot_frames;
   stime.t_tot      = t;
   stime.delta_t    = stime.t_tot/(stime.tot_frames-1);
+  stime.tau_frames = (int)tau/stime.delta_t;  // compare to t_atmcav.time
 
   dmsg ("Simulation time: t_tot ==  (tot_frames-1) * delta_t\n"
 	"                 %g ps  == %d * %g ps \n",
 	stime.t_tot, stime.tot_frames, stime.delta_t); 
-  
+
   /* [sort and] write tracking index (both if also looking for
      molecules). Only track molecules above tau threshold 
   */

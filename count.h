@@ -42,7 +42,6 @@ extern char *endxtype_names[etxNR+1];
 extern char *eDensUnit_names[eduNR+1];
 extern real DensUnit[eduNR];
 
-
 #define ENDXTYPE(e)      ENUM_NAME(e,etxNR,endxtype_names)
 #define EDENSUNITTYPE(e) ENUM_NAME(e,eduNR,eDensUnit_names)
 
@@ -60,8 +59,8 @@ typedef struct {      /* times in the simulation */
   int   tot_frames;   /* number of frames read */
   real  t_tot;        /* simulation time (ps) */
   real  delta_t;      /* time step (ps) */
-  real  tau;          /* threshold for tracking a particle: 
-			 t_cav > tau */
+  real  tau;          /* threshold for tracking a particle: t_cav > tau */
+  int   tau_frames;   /* tau in frames (used for comparison in g_count) */
 } t_simtime;
 
 
