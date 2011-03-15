@@ -132,4 +132,28 @@ Problems, Questions
   are compiling against the wrong version of Gromacs. Please see the
   top of this file for the compatible versions.
 
+* Compiling/linking fails with messages such as
+
+     libgmx.a(vmddlopen.o): In function `vmddlopen': vmddlopen.c:(.text+0x43): undefined reference to `dlopen'
+     ...
+     collect2: ld returned 1 exit status
+
+  This indicates that you also have to link against the dynamic loader
+  library, libdl. In the Makefile, add `-ldl' to LDFLAGS so that it
+  looks like
+
+     LDFLAGS  +=  -lm -L$(GMX_LIB_DIR) -lmd -lgmx -ldl
+
+* Compiling/linking fails with messages such as 
+
+     libgmx.a(pthreads.o): In function `tMPI_Thread_key_delete': pthreads.c:(.text+0x64d): undefined reference to `pthread_key_delete'
+     ...
+     collect2: ld returned 1 exit status
+
+  This indicates that you also have to link against the parallel
+  threads library, libpthread. In the Makefile, add `-lpthread' to
+  LDFLAGS so that it looks like
+
+     LDFLAGS  +=  -lm -L$(GMX_LIB_DIR) -lmd -lgmx -lpthread
+
 
