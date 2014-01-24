@@ -141,20 +141,20 @@ endef
 # 'emacs font-lock
 
 define include_check
-if test -e $(GMX_INCLUDE_DIR)/xtcio.h; then \
-    echo "OK   Gromacs include directory found: $(GMX_INCLUDE_DIR)"; \
+if test -e "$(GMX_INCLUDE_DIR)/xtcio.h"; then \
+   echo "OK   Gromacs include directory found: $(GMX_INCLUDE_DIR)"; \
 else \
-    echo "BAD  Gromacs include directory missing. Set GMX_INCLUDE_DIR in Makefile!"; \
+   echo "BAD  Gromacs include directory missing. Set GMX_INCLUDE_DIR in Makefile!"; \
 fi
 endef
 
 _LIBS = $(wildcard $(GMX_LIB_DIR)/libgmx.*)
+_NLIBS = $(words $(_LIBS))
 define lib_check
-libs=($(_LIBS)); \
-if test "$${#libs[@]}" -gt 0; then \
-    echo "OK   Gromacs lib directory found: $(GMX_LIB_DIR)"; \
+if test $(_NLIBS) -gt 0; then \
+   echo "OK   Gromacs lib directory found: $(GMX_LIB_DIR)"; \
 else \
-    echo "BAD  Gromacs lib directory missing. Set GMX_LIB_DIR in Makefile!"; \
+   echo "BAD  Gromacs lib directory missing. Set GMX_LIB_DIR in Makefile!"; \
 fi
 endef
 
